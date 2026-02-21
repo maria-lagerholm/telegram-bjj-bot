@@ -18,6 +18,7 @@ from modules.commands_basic import (
     habits_command,
     technique_command,
     etiquette_command,
+    dos_command,
     donts_command,
     scoring_command,
     illegal_command,
@@ -103,6 +104,7 @@ def main():
     app.add_handler(CommandHandler("habits", habits_command))
     app.add_handler(CommandHandler("technique", technique_command))
     app.add_handler(CommandHandler("etiquette", etiquette_command))
+    app.add_handler(CommandHandler("dos", dos_command))
     app.add_handler(CommandHandler("donts", donts_command))
     app.add_handler(CommandHandler("scoring", scoring_command))
     app.add_handler(CommandHandler("illegal", illegal_command))

@@ -10,6 +10,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/habits : training consistency\n"
         "/technique : technical focus\n"
         "/etiquette : mat conduct\n"
+        "/dos : what to focus on\n"
         "/donts : what to avoid\n\n"
         "*competition:*\n"
         "/scoring : point system\n"
@@ -83,15 +84,31 @@ async def etiquette_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
+async def dos_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        "*what to do*\n\n"
+        "• keep elbows tight (t-rex arms)\n"
+        "• grip with intention, not desperation\n"
+        "• focus on position before submission\n"
+        "• prioritize defense and escapes\n"
+        "• move your hips, not just arms\n"
+        "• play guard\n"
+        "• drill basics: shrimps, bridges, technical standup\n"
+        "• tap early, tap often\n"
+        "_be hard to submit. that's the best white belt skill._"
+    )
+    await update.message.reply_text(text, parse_mode="Markdown")
+
+
 async def donts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "*what not to do*\n\n"
-        "• move erratically\n"
+        "• move erratically: always move deliberately with control\n"
         "• do techniques you haven't been taught\n"
-        "• reach behind you when someone is on your back\n"
-        "• post hands on mat from bottom (frame on opponent instead)\n"
-        "• cross ankles when on someone's back\n"
-        "• try to submit from inside guard\n\n"
+        "• reach behind you when someone is on your back: protect your neck, control their hands, work your escape\n"
+        "• post hands on mat from bottom: it exposes your arms to kimuras and armbars, frame on your opponent instead\n"
+        "• cross ankles when on someone's back: it gives up a free ankle lock, keep hooks in properly\n"
+        "• try to submit from inside guard: pass the guard first\n\n"
         "_these mistakes get you submitted or injured._"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
@@ -100,15 +117,36 @@ async def donts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def scoring_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "*competition scoring (ibjjf)*\n"
-        "match: 5 min. submission wins instantly.\n\n"
+        "match: 5 min. submission wins instantly.\n"
+        "all positions must be held 3s to score.\n\n"
+        "*points:*\n"
         "```\n"
-        "takedown         +2  hold top 3s\n"
-        "sweep            +2  bottom to top 3s\n"
-        "guard pass       +3  pass guard 3s\n"
-        "knee on belly    +2  kob 3s\n"
-        "mount            +4  sit on torso 3s\n"
-        "back control     +4  both hooks 3s\n"
-        "```"
+        "takedown         +2\n"
+        "sweep            +2\n"
+        "knee on belly    +2\n"
+        "guard pass       +3\n"
+        "mount            +4\n"
+        "back control     +4\n"
+        "```\n\n"
+        "*penalties (each foul escalates):*\n"
+        "```\n"
+        "1st foul   +1 advantage to opponent\n"
+        "2nd foul   +1 advantage to opponent\n"
+        "3rd foul   +2 points to opponent\n"
+        "4th foul   disqualification\n"
+        "```\n\n"
+        "*what earns a foul:*\n"
+        "• stalling / not engaging\n"
+        "• fleeing the mat\n"
+        "• grabbing inside sleeve or pant\n"
+        "• lack of combativeness\n"
+        "• talking to ref without permission\n\n"
+        "*serious fouls (instant dq):*\n"
+        "• any illegal technique for your belt\n"
+        "• slamming opponent\n"
+        "• striking or biting\n\n"
+        "*tiebreaker order:*\n"
+        "points > advantages > ref decision"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 

@@ -9,6 +9,7 @@ a telegram bot that helps you track your bjj journey as a white belt.
 * `/habits` : training consistency tips
 * `/technique` : technical focus points
 * `/etiquette` : mat conduct
+* `/dos` : what to focus on
 * `/donts` : common mistakes to avoid
 * `/scoring` : ibjjf competition point system
 * `/illegal` : banned techniques for white belt
