@@ -14,6 +14,12 @@ def load_database():
             data = json.load(file)
             if "active_drill" not in data:
                 data["active_drill"] = None
+            if "training_log" not in data:
+                data["training_log"] = []
+            if "toolbox" not in data:
+                data["toolbox"] = []
+            if "schedule" not in data:
+                data["schedule"] = []
             return data
     
     new_database = {
@@ -21,6 +27,9 @@ def load_database():
         "notes": [],
         "drill_queue": [],
         "active_drill": None,
+        "training_log": [],
+        "toolbox": [],
+        "schedule": [],
     }
     return new_database
 

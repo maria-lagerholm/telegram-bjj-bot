@@ -18,6 +18,7 @@ from modules.commands_basic import (
     habits_command,
     technique_command,
     technique_callback,
+    toolbox_command,
     etiquette_command,
     dos_command,
     donts_command,
@@ -29,11 +30,13 @@ from modules.commands_goals import (
     goal_start_conversation,
     goal_receive_text,
     goals_list_command,
+    goal_action_callback,
     state_goal_setting,
 )
 from modules.commands_notes import (
     note_start_conversation,
     note_receive_text,
+    note_goal_callback,
     notes_list_command,
     state_note_writing,
 )
@@ -43,7 +46,9 @@ from modules.commands_drills import (
     stats_command,
     stop_drill_callback,
 )
-from modules.reminders import setup_reminders
+from modules.commands_schedule import schedule_command, schedule_callback
+from modules.commands_export import export_command, export_callback
+from modules.reminders import setup_reminders, checkin_callback
 
 load_dotenv()
 
@@ -107,7 +112,15 @@ def main():
     app.add_handler(CommandHandler("notes", notes_list_command))
     app.add_handler(CommandHandler("drilled", drilled_command))
     app.add_handler(CommandHandler("stats", stats_command))
+    app.add_handler(CommandHandler("toolbox", toolbox_command))
+    app.add_handler(CommandHandler("schedule", schedule_command))
+    app.add_handler(CommandHandler("export", export_command))
     
+    app.add_handler(CallbackQueryHandler(goal_action_callback, pattern="^goal_"))
+    app.add_handler(CallbackQueryHandler(checkin_callback, pattern="^checkin_"))
+    app.add_handler(CallbackQueryHandler(note_goal_callback, pattern="^notegoal_"))
+    app.add_handler(CallbackQueryHandler(schedule_callback, pattern="^sched_"))
+    app.add_handler(CallbackQueryHandler(export_callback, pattern="^export_"))
     app.add_handler(CallbackQueryHandler(stop_drill_callback, pattern="^stop_drill$"))
     app.add_handler(CommandHandler("start", setup_reminders), group=1)
     

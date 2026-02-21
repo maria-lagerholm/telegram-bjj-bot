@@ -1,8 +1,19 @@
+from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
 from .techniques_data import TECHNIQUES
 from .database import load_database, save_database
+
+
+def _toolbox_key(cat_id: str, tech_id: str) -> str:
+    """Consistent key for a technique in the toolbox."""
+    return f"{cat_id}:{tech_id}"
+
+
+def _get_toolbox(db: dict) -> set:
+    """Return set of toolbox keys."""
+    return set(e["key"] for e in db.get("toolbox", []))
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -19,13 +30,15 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/scoring : point system\n"
         "/illegal : banned moves\n\n"
         "*training:*\n"
-        "/goal : set weekly goal\n"
+        "/goal : set weekly goal (max 3)\n"
         "/goals : view all goals\n"
         "/note : log session\n"
         "/notes : view all notes\n"
-        "/drill : add technique\n"
-        "/drills : view queue\n"
+        "/drill : active drill\n"
         "/drilled : mark as done\n"
+        "/toolbox : techniques you know\n"
+        "/schedule : set training days\n"
+        "/export : save your data\n"
         "/stats : your progress\n"
         "/help : this message\n\n"
         "use /note after each training!"
@@ -60,88 +73,194 @@ async def habits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def technique_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    db = load_database()
+    toolbox = _get_toolbox(db)
+
     keyboard = []
     for cat_id, cat_data in TECHNIQUES.items():
-        keyboard.append([InlineKeyboardButton(cat_data["name"], callback_data=f"techcat_{cat_id}")])
-    
+        # count how many techniques in this category the user knows
+        total = len(cat_data["items"])
+        known = sum(
+            1 for tech_id in cat_data["items"]
+            if _toolbox_key(cat_id, tech_id) in toolbox
+        )
+        label = cat_data["name"]
+        if known > 0:
+            label += f" ({known}/{total} ✓)"
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"techcat_{cat_id}")])
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = "*techniques library*\n\nchoose a category:"
-    
+
     await update.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
+
     data = query.data
-    
+    db = load_database()
+    toolbox = _get_toolbox(db)
+
     if data == "tech_main":
         keyboard = []
         for cat_id, cat_data in TECHNIQUES.items():
-            keyboard.append([InlineKeyboardButton(cat_data["name"], callback_data=f"techcat_{cat_id}")])
-        
+            total = len(cat_data["items"])
+            known = sum(
+                1 for tech_id in cat_data["items"]
+                if _toolbox_key(cat_id, tech_id) in toolbox
+            )
+            label = cat_data["name"]
+            if known > 0:
+                label += f" ({known}/{total} ✓)"
+            keyboard.append([InlineKeyboardButton(label, callback_data=f"techcat_{cat_id}")])
+
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("*techniques library*\n\nchoose a category:", parse_mode="Markdown", reply_markup=reply_markup)
         return
-        
+
     if data.startswith("techcat_"):
         cat_id = data.split("_")[1]
         if cat_id not in TECHNIQUES:
             return
-            
+
         category = TECHNIQUES[cat_id]
         keyboard = []
         for tech_id, tech_data in category["items"].items():
-            keyboard.append([InlineKeyboardButton(tech_data["name"], callback_data=f"techitem_{cat_id}_{tech_id}")])
-            
+            key = _toolbox_key(cat_id, tech_id)
+            prefix = "✓ " if key in toolbox else ""
+            keyboard.append([InlineKeyboardButton(
+                f"{prefix}{tech_data['name']}",
+                callback_data=f"techitem_{cat_id}_{tech_id}",
+            )])
+
         keyboard.append([InlineKeyboardButton("« back to categories", callback_data="tech_main")])
         reply_markup = InlineKeyboardMarkup(keyboard)
-        
+
         await query.edit_message_text(f"*{category['name']}*\n\nchoose a technique:", parse_mode="Markdown", reply_markup=reply_markup)
-        
+
     elif data.startswith("techitem_"):
         parts = data.split("_")
         cat_id = parts[1]
         tech_id = parts[2]
-        
+
         if cat_id not in TECHNIQUES or tech_id not in TECHNIQUES[cat_id]["items"]:
             return
-            
+
         tech = TECHNIQUES[cat_id]["items"][tech_id]
-        
+        key = _toolbox_key(cat_id, tech_id)
+        known = key in toolbox
+
         text = (
             f"*{tech['name']}*\n\n"
             f"{tech['description']}\n\n"
             f"[watch tutorial]({tech['video_url']})"
         )
-        
+
         keyboard = [
             [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
-            [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")]
+        ]
+
+        if known:
+            keyboard.append([InlineKeyboardButton("✓ in your toolbox — remove", callback_data=f"techunknow_{cat_id}_{tech_id}")])
+        else:
+            keyboard.append([InlineKeyboardButton("I know this — add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")])
+
+        keyboard.append([InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup, disable_web_page_preview=False)
+
+    elif data.startswith("techknow_"):
+        # add technique to toolbox
+        parts = data.split("_")
+        cat_id = parts[1]
+        tech_id = parts[2]
+
+        if cat_id not in TECHNIQUES or tech_id not in TECHNIQUES[cat_id]["items"]:
+            return
+
+        tech = TECHNIQUES[cat_id]["items"][tech_id]
+        key = _toolbox_key(cat_id, tech_id)
+
+        if key not in toolbox:
+            db["toolbox"].append({
+                "key": key,
+                "name": tech["name"],
+                "category": TECHNIQUES[cat_id]["name"],
+                "added_at": datetime.now().isoformat(),
+            })
+            save_database(db)
+
+        # refresh the technique view with updated button
+        text = (
+            f"*{tech['name']}*\n\n"
+            f"{tech['description']}\n\n"
+            f"[watch tutorial]({tech['video_url']})"
+        )
+
+        keyboard = [
+            [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("✓ in your toolbox — remove", callback_data=f"techunknow_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # disable web page preview so it doesn't clutter unless desired, but youtube previews might be nice.
-        # let's leave it enabled.
+
+        await query.edit_message_text(
+            f"✓ *{tech['name']}* added to your toolbox!\n\n"
+            f"{tech['description']}\n\n"
+            f"[watch tutorial]({tech['video_url']})",
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
+            disable_web_page_preview=False,
+        )
+
+    elif data.startswith("techunknow_"):
+        # remove technique from toolbox
+        parts = data.split("_")
+        cat_id = parts[1]
+        tech_id = parts[2]
+
+        if cat_id not in TECHNIQUES or tech_id not in TECHNIQUES[cat_id]["items"]:
+            return
+
+        tech = TECHNIQUES[cat_id]["items"][tech_id]
+        key = _toolbox_key(cat_id, tech_id)
+
+        db["toolbox"] = [e for e in db.get("toolbox", []) if e["key"] != key]
+        save_database(db)
+
+        text = (
+            f"*{tech['name']}*\n\n"
+            f"{tech['description']}\n\n"
+            f"[watch tutorial]({tech['video_url']})"
+        )
+
+        keyboard = [
+            [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("I know this — add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
         await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup, disable_web_page_preview=False)
 
     elif data.startswith("techdrill_"):
         parts = data.split("_")
         cat_id = parts[1]
         tech_id = parts[2]
-        
+
         if cat_id not in TECHNIQUES or tech_id not in TECHNIQUES[cat_id]["items"]:
             return
-            
+
         tech = TECHNIQUES[cat_id]["items"][tech_id]
-        from datetime import datetime, timedelta
-        
+
         db = load_database()
-        
+
         # 14 days from now
         end_date = datetime.now() + timedelta(days=14)
-        
+
         db["active_drill"] = {
             "technique": tech['name'],
             "description": tech['description'],
@@ -150,19 +269,55 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "end_date": end_date.isoformat(),
             "drilled_count": 0
         }
-        
+
         save_database(db)
-        
+
         text = (
             f"*{tech['name']}* set as your active drill!\n\n"
             "you'll be reminded to drill this for the next 2 weeks.\n"
             "use /drilled when you practice it."
         )
-        
+
         keyboard = [[InlineKeyboardButton("« back to technique", callback_data=f"techitem_{cat_id}_{tech_id}")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        
+
         await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+
+
+async def toolbox_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show all techniques the user has marked as known."""
+    db = load_database()
+    toolbox = db.get("toolbox", [])
+
+    if not toolbox:
+        await update.message.reply_text(
+            "*your toolbox*\n\n"
+            "empty! browse /technique and mark the ones you know.",
+            parse_mode="Markdown",
+        )
+        return
+
+    # group by category
+    by_category = {}
+    for entry in toolbox:
+        cat = entry.get("category", "other")
+        by_category.setdefault(cat, []).append(entry["name"])
+
+    # count total techniques available
+    total_available = sum(len(cat["items"]) for cat in TECHNIQUES.values())
+    total_known = len(toolbox)
+
+    message = f"*your toolbox* ({total_known}/{total_available})\n\n"
+
+    for cat_name, techs in by_category.items():
+        message += f"*{cat_name}:*\n"
+        for name in techs:
+            message += f"  ✓ {name}\n"
+        message += "\n"
+
+    message += "_browse /technique to add more_"
+
+    await update.message.reply_text(message, parse_mode="Markdown")
 
 
 async def etiquette_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

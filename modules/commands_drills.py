@@ -104,13 +104,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     total_notes = len(database["notes"])
     total_goals = len(database["goals"])
-    
-    # count from history
-    drills_solid = 0
-    for drill in database["drill_queue"]:
-        if drill.get("drilled_count", 0) >= 5:
-            drills_solid += 1
-            
+
     active_drill = database.get("active_drill")
     active_drill_text = active_drill["technique"] if active_drill else "none"
     
@@ -124,14 +118,58 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         first_date = "n/a"
         this_week_notes = 0
+
+    # training check-in stats
+    training_log = database.get("training_log", [])
+    total_checkins = len(training_log)
+    days_trained = sum(1 for e in training_log if e["trained"])
+    days_rest = total_checkins - days_trained
+
+    seven_days_ago_str = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    thirty_days_ago_str = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    week_trained = sum(1 for e in training_log if e["trained"] and e["date"] >= seven_days_ago_str)
+    month_trained = sum(1 for e in training_log if e["trained"] and e["date"] >= thirty_days_ago_str)
+
+    # current streak
+    streak = 0
+    current = datetime.now().date()
+    trained_dates = sorted(
+        [e["date"] for e in training_log if e["trained"]],
+        reverse=True,
+    )
+    for date_str in trained_dates:
+        log_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        if log_date == current:
+            streak += 1
+            current = current - timedelta(days=1)
+        else:
+            break
     
     message = (
         "*training stats*\n\n"
-        f"total notes: *{total_notes}*\n"
-        f"this week: *{this_week_notes}*\n"
-        f"goals set: *{total_goals}*\n"
-        f"past drills solid (5+ reps): *{drills_solid}*\n"
-        f"active drill: *{active_drill_text}*\n"
+        "*activity:*\n"
+        f"  this week: *{week_trained}* sessions\n"
+        f"  this month: *{month_trained}* sessions\n"
+        f"  total trained: *{days_trained}* days\n"
+        f"  rest days: *{days_rest}*\n"
+    )
+
+    if streak > 0:
+        message += f"  🔥 streak: *{streak}* days\n"
+
+    # toolbox stats
+    toolbox = database.get("toolbox", [])
+    from .techniques_data import TECHNIQUES
+    total_techniques = sum(len(cat["items"]) for cat in TECHNIQUES.values())
+    toolbox_count = len(toolbox)
+
+    message += (
+        f"\n*notes & drills:*\n"
+        f"  total notes: *{total_notes}*\n"
+        f"  notes this week: *{this_week_notes}*\n"
+        f"  goals set: *{total_goals}*\n"
+        f"  active drill: *{active_drill_text}*\n"
+        f"  toolbox: *{toolbox_count}/{total_techniques}* techniques\n"
     )
     
     if database["notes"]:
