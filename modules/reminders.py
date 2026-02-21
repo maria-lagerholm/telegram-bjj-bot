@@ -9,20 +9,19 @@ async def send_daily_drill_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     database = load_database()
     
-    if not database["drill_queue"]:
+    active_drill = database.get("active_drill")
+    if not active_drill:
         return
+        
+    count = active_drill.get("drilled_count", 0)
     
-    sorted_drills = sorted(
-        database["drill_queue"],
-        key=lambda drill: drill.get("drilled_count", 0)
+    message = (
+        "*daily drill reminder*\n\n"
+        f"focus on: *{active_drill['technique']}*\n"
+        f"current reps: {count}\n\n"
+        f"_{active_drill['description']}_\n\n"
+        f"[watch tutorial]({active_drill['video_url']})"
     )
-    
-    top_three_drills = sorted_drills[:3]
-    
-    message = "*daily drill reminder*\n\nfocus on:\n\n"
-    for drill in top_three_drills:
-        count = drill.get("drilled_count", 0)
-        message += f"  • *{drill['technique']}* ({count}x)\n"
     
     await context.bot.send_message(
         chat_id=chat_id,

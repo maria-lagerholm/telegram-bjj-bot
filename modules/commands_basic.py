@@ -1,5 +1,8 @@
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
+
+from .techniques_data import TECHNIQUES
+from .database import load_database, save_database
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -57,28 +60,118 @@ async def habits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def technique_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "*technical focus*\n\n"
-        "• keep elbows tight (t-rex arms)\n"
-        "• grip with intention, not desperation\n"
-        "• focus on position before submission\n"
-        "• learn fundamental positions: mount, side control, guard, back, turtle\n"
-        "• prioritize defense and escapes\n"
-        "• move your hips, not just arms\n"
-        "• play guard\n"
-        "• drill basics: shrimps, bridges, technical standup\n\n"
-        "_the best white belt skill is being hard to submit._"
-    )
-    await update.message.reply_text(text, parse_mode="Markdown")
+    keyboard = []
+    for cat_id, cat_data in TECHNIQUES.items():
+        keyboard.append([InlineKeyboardButton(cat_data["name"], callback_data=f"techcat_{cat_id}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = "*techniques library*\n\nchoose a category:"
+    
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+
+
+async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    data = query.data
+    
+    if data == "tech_main":
+        keyboard = []
+        for cat_id, cat_data in TECHNIQUES.items():
+            keyboard.append([InlineKeyboardButton(cat_data["name"], callback_data=f"techcat_{cat_id}")])
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("*techniques library*\n\nchoose a category:", parse_mode="Markdown", reply_markup=reply_markup)
+        return
+        
+    if data.startswith("techcat_"):
+        cat_id = data.split("_")[1]
+        if cat_id not in TECHNIQUES:
+            return
+            
+        category = TECHNIQUES[cat_id]
+        keyboard = []
+        for tech_id, tech_data in category["items"].items():
+            keyboard.append([InlineKeyboardButton(tech_data["name"], callback_data=f"techitem_{cat_id}_{tech_id}")])
+            
+        keyboard.append([InlineKeyboardButton("« back to categories", callback_data="tech_main")])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(f"*{category['name']}*\n\nchoose a technique:", parse_mode="Markdown", reply_markup=reply_markup)
+        
+    elif data.startswith("techitem_"):
+        parts = data.split("_")
+        cat_id = parts[1]
+        tech_id = parts[2]
+        
+        if cat_id not in TECHNIQUES or tech_id not in TECHNIQUES[cat_id]["items"]:
+            return
+            
+        tech = TECHNIQUES[cat_id]["items"][tech_id]
+        
+        text = (
+            f"*{tech['name']}*\n\n"
+            f"{tech['description']}\n\n"
+            f"[watch tutorial]({tech['video_url']})"
+        )
+        
+        keyboard = [
+            [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # disable web page preview so it doesn't clutter unless desired, but youtube previews might be nice.
+        # let's leave it enabled.
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup, disable_web_page_preview=False)
+
+    elif data.startswith("techdrill_"):
+        parts = data.split("_")
+        cat_id = parts[1]
+        tech_id = parts[2]
+        
+        if cat_id not in TECHNIQUES or tech_id not in TECHNIQUES[cat_id]["items"]:
+            return
+            
+        tech = TECHNIQUES[cat_id]["items"][tech_id]
+        from datetime import datetime, timedelta
+        
+        db = load_database()
+        
+        # 14 days from now
+        end_date = datetime.now() + timedelta(days=14)
+        
+        db["active_drill"] = {
+            "technique": tech['name'],
+            "description": tech['description'],
+            "video_url": tech['video_url'],
+            "start_date": datetime.now().isoformat(),
+            "end_date": end_date.isoformat(),
+            "drilled_count": 0
+        }
+        
+        save_database(db)
+        
+        text = (
+            f"*{tech['name']}* set as your active drill!\n\n"
+            "you'll be reminded to drill this for the next 2 weeks.\n"
+            "use /drilled when you practice it."
+        )
+        
+        keyboard = [[InlineKeyboardButton("« back to technique", callback_data=f"techitem_{cat_id}_{tech_id}")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def etiquette_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "*mat etiquette*\n\n"
         "• don't coach from sidelines during rolling unless asked\n"
-        "• always move deliberately with control\n"
-        "• tap early, tap often\n"
-        "• respect your training partners\n\n"
+        "• respect your training partners\n"
+        "• ensure your gi and gear are clean\n"
+        "• trim your nails and maintain hygiene\n\n"
         "_your training partner is helping you learn._"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
@@ -86,16 +179,15 @@ async def etiquette_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def dos_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "*what to do*\n\n"
-        "• keep elbows tight (t-rex arms)\n"
-        "• grip with intention, not desperation\n"
-        "• focus on position before submission\n"
-        "• prioritize defense and escapes\n"
-        "• move your hips, not just arms\n"
-        "• play guard\n"
-        "• drill basics: shrimps, bridges, technical standup\n"
-        "• tap early, tap often\n"
-        "_be hard to submit. that's the best white belt skill._"
+        "*what to do on the mats*\n\n"
+        "• keep elbows tight to your body (t-rex arms)\n"
+        "• grip with intention, don't burn out your forearms\n"
+        "• secure your position before attempting a submission\n"
+        "• prioritize defense and survival first\n"
+        "• move your hips constantly (shrimp!)\n"
+        "• breathe calmly to save energy\n"
+        "• tap early to avoid injury, tap often to learn\n\n"
+        "_surviving a bad position is your first victory._"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
@@ -128,7 +220,7 @@ async def scoring_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "mount            +4\n"
         "back control     +4\n"
         "```\n\n"
-        "*penalties (each foul escalates):*\n"
+        "*penalties:*\n"
         "```\n"
         "1st foul   +1 advantage to opponent\n"
         "2nd foul   +1 advantage to opponent\n"
@@ -137,16 +229,11 @@ async def scoring_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "```\n\n"
         "*what earns a foul:*\n"
         "• stalling / not engaging\n"
-        "• fleeing the mat\n"
         "• grabbing inside sleeve or pant\n"
         "• lack of combativeness\n"
-        "• talking to ref without permission\n\n"
         "*serious fouls (instant dq):*\n"
         "• any illegal technique for your belt\n"
         "• slamming opponent\n"
-        "• striking or biting\n\n"
-        "*tiebreaker order:*\n"
-        "points > advantages > ref decision"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 

@@ -11,12 +11,16 @@ protocol_file = Path(__file__).parent.parent / "bjj_white_belt_guide.txt"
 def load_database():
     if database_file.exists():
         with open(database_file, "r") as file:
-            return json.load(file)
+            data = json.load(file)
+            if "active_drill" not in data:
+                data["active_drill"] = None
+            return data
     
     new_database = {
         "goals": [],
         "notes": [],
         "drill_queue": [],
+        "active_drill": None,
     }
     return new_database
 

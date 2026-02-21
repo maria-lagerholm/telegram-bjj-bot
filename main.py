@@ -17,6 +17,7 @@ from modules.commands_basic import (
     mindset_command,
     habits_command,
     technique_command,
+    technique_callback,
     etiquette_command,
     dos_command,
     donts_command,
@@ -37,13 +38,10 @@ from modules.commands_notes import (
     state_note_writing,
 )
 from modules.commands_drills import (
-    drill_start_conversation,
-    drill_receive_text,
     drills_list_command,
     drilled_command,
-    drilled_button_callback,
     stats_command,
-    state_drill_adding,
+    stop_drill_callback,
 )
 from modules.reminders import setup_reminders
 
@@ -88,21 +86,12 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel_command)],
     )
     
-    drill_conversation = ConversationHandler(
-        entry_points=[CommandHandler("drill", drill_start_conversation)],
-        states={
-            state_drill_adding: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, drill_receive_text)
-            ]
-        },
-        fallbacks=[CommandHandler("cancel", cancel_command)],
-    )
-    
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("mindset", mindset_command))
     app.add_handler(CommandHandler("habits", habits_command))
     app.add_handler(CommandHandler("technique", technique_command))
+    app.add_handler(CallbackQueryHandler(technique_callback, pattern="^tech"))
     app.add_handler(CommandHandler("etiquette", etiquette_command))
     app.add_handler(CommandHandler("dos", dos_command))
     app.add_handler(CommandHandler("donts", donts_command))
@@ -110,13 +99,16 @@ def main():
     app.add_handler(CommandHandler("illegal", illegal_command))
     app.add_handler(goal_conversation)
     app.add_handler(note_conversation)
-    app.add_handler(drill_conversation)
+    
+    # Both /drill and /drills now show the active 2-week drill
+    app.add_handler(CommandHandler("drill", drills_list_command))
+    app.add_handler(CommandHandler("drills", drills_list_command))
     app.add_handler(CommandHandler("goals", goals_list_command))
     app.add_handler(CommandHandler("notes", notes_list_command))
-    app.add_handler(CommandHandler("drills", drills_list_command))
     app.add_handler(CommandHandler("drilled", drilled_command))
     app.add_handler(CommandHandler("stats", stats_command))
-    app.add_handler(CallbackQueryHandler(drilled_button_callback, pattern="^drilled_"))
+    
+    app.add_handler(CallbackQueryHandler(stop_drill_callback, pattern="^stop_drill$"))
     app.add_handler(CommandHandler("start", setup_reminders), group=1)
     
     print("BJJ Bot running! Ctrl+C to stop.")

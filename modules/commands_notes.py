@@ -39,24 +39,6 @@ async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     database["notes"].append(new_note)
     
-    new_drills = []
-    existing_techniques = set()
-    
-    for drill in database["drill_queue"]:
-        existing_techniques.add(drill["technique"].lower())
-    
-    for technique in techniques_found:
-        if technique.lower() not in existing_techniques:
-            new_drill = {
-                "technique": technique,
-                "added_at": now.isoformat(),
-                "drilled_count": 0,
-                "last_reminded": None,
-            }
-            database["drill_queue"].append(new_drill)
-            new_drills.append(technique)
-            existing_techniques.add(technique.lower())
-    
     save_database(database)
     
     reply = "note saved!\n\n"
@@ -64,10 +46,6 @@ async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if techniques_found:
         techniques_list = ", ".join(techniques_found)
         reply += f"detected: {techniques_list}\n"
-    
-    if new_drills:
-        new_drills_list = ", ".join(new_drills)
-        reply += f"added to drills: {new_drills_list}\n"
     
     await update.message.reply_text(reply)
     return ConversationHandler.END
