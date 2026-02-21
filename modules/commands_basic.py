@@ -34,8 +34,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/goals : view all goals\n"
         "/note : log session\n"
         "/notes : view all notes\n"
-        "/drill : active drill\n"
-        "/drilled : mark as done\n"
+        "/focus : current technique focus\n"
         "/toolbox : techniques you know\n"
         "/schedule : set training days\n"
         "/export : save your data\n"
@@ -158,14 +157,13 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"[watch tutorial]({tech['video_url']})"
         )
 
-        keyboard = [
-            [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
-        ]
+        keyboard = []
 
         if known:
-            keyboard.append([InlineKeyboardButton("✓ in your toolbox — remove", callback_data=f"techunknow_{cat_id}_{tech_id}")])
+            keyboard.append([InlineKeyboardButton("✓ in your toolbox, remove", callback_data=f"techunknow_{cat_id}_{tech_id}")])
         else:
-            keyboard.append([InlineKeyboardButton("I know this — add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")])
+            keyboard.append([InlineKeyboardButton("focus on this (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")])
+            keyboard.append([InlineKeyboardButton("I know this, add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")])
 
         keyboard.append([InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")])
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -194,15 +192,8 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             save_database(db)
 
         # refresh the technique view with updated button
-        text = (
-            f"*{tech['name']}*\n\n"
-            f"{tech['description']}\n\n"
-            f"[watch tutorial]({tech['video_url']})"
-        )
-
         keyboard = [
-            [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
-            [InlineKeyboardButton("✓ in your toolbox — remove", callback_data=f"techunknow_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("✓ in your toolbox, remove", callback_data=f"techunknow_{cat_id}_{tech_id}")],
             [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -231,20 +222,21 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         db["toolbox"] = [e for e in db.get("toolbox", []) if e["key"] != key]
         save_database(db)
 
-        text = (
-            f"*{tech['name']}*\n\n"
-            f"{tech['description']}\n\n"
-            f"[watch tutorial]({tech['video_url']})"
-        )
-
         keyboard = [
-            [InlineKeyboardButton("set as active drill (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
-            [InlineKeyboardButton("I know this — add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("focus on this (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("I know this, add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")],
             [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup, disable_web_page_preview=False)
+        await query.edit_message_text(
+            f"*{tech['name']}*\n\n"
+            f"{tech['description']}\n\n"
+            f"[watch tutorial]({tech['video_url']})",
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
+            disable_web_page_preview=False,
+        )
 
     elif data.startswith("techdrill_"):
         parts = data.split("_")
@@ -265,17 +257,18 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "technique": tech['name'],
             "description": tech['description'],
             "video_url": tech['video_url'],
+            "category": TECHNIQUES[cat_id]["name"],
+            "toolbox_key": _toolbox_key(cat_id, tech_id),
             "start_date": datetime.now().isoformat(),
             "end_date": end_date.isoformat(),
-            "drilled_count": 0
         }
 
         save_database(db)
 
         text = (
-            f"*{tech['name']}* set as your active drill!\n\n"
-            "you'll be reminded to drill this for the next 2 weeks.\n"
-            "use /drilled when you practice it."
+            f"*{tech['name']}* set as your focus!\n\n"
+            "you'll be reminded about this for the next 2 weeks.\n"
+            "use /focus to see it or move it to your toolbox when you've got it down."
         )
 
         keyboard = [[InlineKeyboardButton("« back to technique", callback_data=f"techitem_{cat_id}_{tech_id}")]]

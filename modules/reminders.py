@@ -6,28 +6,33 @@ from .database import load_database, save_database
 from .helpers import get_current_week
 
 
-async def send_daily_drill_reminder(context: ContextTypes.DEFAULT_TYPE):
+async def send_daily_focus_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     database = load_database()
-    
+
     active_drill = database.get("active_drill")
     if not active_drill:
         return
-        
-    count = active_drill.get("drilled_count", 0)
-    
+
+    days_left = 0
+    try:
+        end_dt = datetime.fromisoformat(active_drill["end_date"])
+        days_left = max(0, (end_dt - datetime.now()).days)
+    except (ValueError, KeyError):
+        pass
+
     message = (
-        "*daily drill reminder*\n\n"
-        f"focus on: *{active_drill['technique']}*\n"
-        f"current reps: {count}\n\n"
-        f"_{active_drill['description']}_\n\n"
-        f"[watch tutorial]({active_drill['video_url']})"
+        "*focus reminder*\n\n"
+        f"you're working on: *{active_drill['technique']}*\n"
+        f"time left: {days_left} days\n\n"
+        f"_{active_drill.get('description', '')}_\n\n"
+        f"[watch tutorial]({active_drill.get('video_url', '')})"
     )
-    
+
     await context.bot.send_message(
         chat_id=chat_id,
         text=message,
-        parse_mode="Markdown"
+        parse_mode="Markdown",
     )
 
 
@@ -219,14 +224,13 @@ async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
         message += f"{preview}\n\n"
 
     if active_drill:
-        count = active_drill.get("drilled_count", 0)
         message += (
-            f"*active drill:* {active_drill['technique']} ({count} reps)\n"
-            f"_{active_drill['description']}_\n\n"
+            f"*focus technique:* {active_drill['technique']}\n"
+            f"_{active_drill.get('description', '')}_\n\n"
         )
 
     if not active_goals and not last_note and not active_drill:
-        message += "no notes or goals yet — focus on learning today!\n"
+        message += "no notes or goals yet, focus on learning today!\n"
 
     message += "_have a great session! use /note afterwards to log what you learned._"
 
@@ -291,9 +295,9 @@ async def setup_reminders(update, context):
     chat_id = update.effective_chat.id
     job_queue = context.application.job_queue
     
-    drill_reminder_name = f"drill_reminder_{chat_id}"
-    existing_drill_jobs = job_queue.get_jobs_by_name(drill_reminder_name)
-    for job in existing_drill_jobs:
+    focus_reminder_name = f"focus_reminder_{chat_id}"
+    existing_focus_jobs = job_queue.get_jobs_by_name(focus_reminder_name)
+    for job in existing_focus_jobs:
         job.schedule_removal()
     
     goal_reminder_name = f"goal_reminder_{chat_id}"
@@ -307,10 +311,10 @@ async def setup_reminders(update, context):
         job.schedule_removal()
     
     job_queue.run_daily(
-        send_daily_drill_reminder,
+        send_daily_focus_reminder,
         time=time(hour=9, minute=0),
         chat_id=chat_id,
-        name=drill_reminder_name,
+        name=focus_reminder_name,
     )
     
     job_queue.run_daily(

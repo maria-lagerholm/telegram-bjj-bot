@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import BotCommand, Update
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -41,10 +41,9 @@ from modules.commands_notes import (
     state_note_writing,
 )
 from modules.commands_drills import (
-    drills_list_command,
-    drilled_command,
+    focus_command,
+    focus_callback,
     stats_command,
-    stop_drill_callback,
 )
 from modules.commands_schedule import schedule_command, schedule_callback
 from modules.commands_export import export_command, export_callback
@@ -59,6 +58,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def post_init(application):
+    """Register command suggestions with Telegram so they appear when typing /."""
+    await application.bot.set_my_commands([
+        BotCommand("help", "all commands"),
+        BotCommand("note", "log a training session"),
+        BotCommand("notes", "view your notes"),
+        BotCommand("goal", "set a goal (max 3)"),
+        BotCommand("goals", "view your goals"),
+        BotCommand("focus", "current technique focus"),
+        BotCommand("technique", "browse technique library"),
+        BotCommand("toolbox", "techniques you know"),
+        BotCommand("stats", "your progress"),
+        BotCommand("schedule", "set training days"),
+        BotCommand("export", "save your data"),
+        BotCommand("mindset", "mental approach"),
+        BotCommand("habits", "training consistency"),
+        BotCommand("etiquette", "mat conduct"),
+        BotCommand("dos", "what to focus on"),
+        BotCommand("donts", "what to avoid"),
+        BotCommand("scoring", "competition points"),
+        BotCommand("illegal", "banned moves"),
+    ])
+
+
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     
@@ -69,7 +92,7 @@ def main():
         print("=" * 50)
         return
     
-    app = Application.builder().token(token).build()
+    app = Application.builder().token(token).post_init(post_init).build()
     
     goal_conversation = ConversationHandler(
         entry_points=[CommandHandler("goal", goal_start_conversation)],
@@ -105,12 +128,10 @@ def main():
     app.add_handler(goal_conversation)
     app.add_handler(note_conversation)
     
-    # Both /drill and /drills now show the active 2-week drill
-    app.add_handler(CommandHandler("drill", drills_list_command))
-    app.add_handler(CommandHandler("drills", drills_list_command))
+    app.add_handler(CommandHandler("focus", focus_command))
+    app.add_handler(CommandHandler("drill", focus_command))
     app.add_handler(CommandHandler("goals", goals_list_command))
     app.add_handler(CommandHandler("notes", notes_list_command))
-    app.add_handler(CommandHandler("drilled", drilled_command))
     app.add_handler(CommandHandler("stats", stats_command))
     app.add_handler(CommandHandler("toolbox", toolbox_command))
     app.add_handler(CommandHandler("schedule", schedule_command))
@@ -121,7 +142,7 @@ def main():
     app.add_handler(CallbackQueryHandler(note_goal_callback, pattern="^notegoal_"))
     app.add_handler(CallbackQueryHandler(schedule_callback, pattern="^sched_"))
     app.add_handler(CallbackQueryHandler(export_callback, pattern="^export_"))
-    app.add_handler(CallbackQueryHandler(stop_drill_callback, pattern="^stop_drill$"))
+    app.add_handler(CallbackQueryHandler(focus_callback, pattern="^focus_"))
     app.add_handler(CommandHandler("start", setup_reminders), group=1)
     
     print("BJJ Bot running! Ctrl+C to stop.")

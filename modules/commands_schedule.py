@@ -20,8 +20,10 @@ async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = "*your bjj schedule*\n\n"
 
-    if schedule:
-        for entry in sorted(schedule, key=lambda e: (DAY_TO_NUM.get(e["day"], 7), e["time"])):
+    sorted_schedule = sorted(schedule, key=lambda e: (DAY_TO_NUM.get(e["day"], 7), e["time"])) if schedule else []
+
+    if sorted_schedule:
+        for entry in sorted_schedule:
             message += f"  • *{entry['day']}* at {entry['time']}\n"
         message += "\n"
     else:
@@ -37,7 +39,14 @@ async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard.append(row)
             row = []
 
-    if schedule:
+    # show remove buttons for each existing entry
+    if sorted_schedule:
+        for entry in sorted_schedule:
+            idx = schedule.index(entry)
+            keyboard.append([InlineKeyboardButton(
+                f"✕ remove {entry['day']} {entry['time']}",
+                callback_data=f"sched_rm_{idx}",
+            )])
         keyboard.append([InlineKeyboardButton("🗑 clear entire schedule", callback_data="sched_clear")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -57,10 +66,13 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         context.user_data["sched_pending_day"] = day
 
-        # offer common class times
+        # offer common class times (full and half hours)
         keyboard = []
-        common_times = ["06:00", "07:00", "08:00", "09:00", "10:00",
-                        "11:00", "12:00", "17:00", "18:00", "19:00", "20:00", "21:00"]
+        common_hours = [6, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 21]
+        common_times = []
+        for h in common_hours:
+            common_times.append(f"{h:02d}:00")
+            common_times.append(f"{h:02d}:30")
         row = []
         for t in common_times:
             row.append(InlineKeyboardButton(t, callback_data=f"sched_time_{t}"))
@@ -73,7 +85,7 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton("« cancel", callback_data="sched_cancel")])
 
         await query.edit_message_text(
-            f"*{day}* — pick your class time:",
+            f"*{day}* pick your class time:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )

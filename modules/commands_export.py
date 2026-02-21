@@ -17,8 +17,8 @@ async def export_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "*export your data*\n\n"
         "choose a format:\n"
-        "• *txt* — human-readable summary of all your data\n"
-        "• *json* — full raw backup (can be re-imported later)\n\n"
+        "• *txt* human-readable summary of all your data\n"
+        "• *json* full raw backup (can be re-imported later)\n\n"
         "_the file will be sent right here in chat. "
         "you can then save it to google drive, email it, or store it anywhere._",
         parse_mode="Markdown",
@@ -138,30 +138,31 @@ def _build_txt_export(db: dict) -> str:
         lines.append("  (no notes yet)")
     lines.append("")
 
-    # --- ACTIVE DRILL ---
+    # --- CURRENT FOCUS ---
     active_drill = db.get("active_drill")
     lines.append("-" * 50)
-    lines.append("ACTIVE DRILL")
+    lines.append("CURRENT FOCUS")
     lines.append("-" * 50)
 
     if active_drill:
         lines.append(f"  technique: {active_drill.get('technique', '')}")
-        lines.append(f"  reps: {active_drill.get('drilled_count', 0)}")
         lines.append(f"  started: {active_drill.get('start_date', '')[:10]}")
         lines.append(f"  ends: {active_drill.get('end_date', '')[:10]}")
         lines.append(f"  video: {active_drill.get('video_url', '')}")
     else:
-        lines.append("  (no active drill)")
+        lines.append("  (no focus set)")
     lines.append("")
 
-    # --- DRILL HISTORY ---
+    # --- FOCUS HISTORY ---
     drill_history = db.get("drill_queue", [])
     if drill_history:
         lines.append("-" * 50)
-        lines.append(f"DRILL HISTORY ({len(drill_history)} drills)")
+        lines.append(f"FOCUS HISTORY ({len(drill_history)} techniques)")
         lines.append("-" * 50)
         for d in reversed(drill_history):
-            lines.append(f"  • {d.get('technique', '?')} — {d.get('drilled_count', 0)} reps (finished {d.get('finished_at', '')[:10]})")
+            outcome = d.get("outcome", "stopped")
+            icon = "✓" if outcome == "toolbox" else "✕"
+            lines.append(f"  {icon} {d.get('technique', '?')} ({outcome}, {d.get('finished_at', '')[:10]})")
         lines.append("")
 
     # --- TRAINING LOG ---
@@ -178,7 +179,7 @@ def _build_txt_export(db: dict) -> str:
         lines.append("")
         lines.append("  recent:")
         for entry in reversed(training_log[-30:]):
-            status = "✓ trained" if entry.get("trained") else "— rest"
+            status = "✓ trained" if entry.get("trained") else "rest"
             lines.append(f"    {entry.get('date', '?')} {status}")
         if len(training_log) > 30:
             lines.append(f"    …and {len(training_log) - 30} more")

@@ -1,118 +1,133 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
 
 
-async def drills_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def focus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show the user's current focus technique."""
     database = load_database()
     active_drill = database.get("active_drill")
-    
+
     if not active_drill:
         await update.message.reply_text(
-            "you have no active drill!\n\n"
-            "use /technique to browse the library and select a technique to focus on for the next 2 weeks.",
-            parse_mode="Markdown"
+            "*current focus*\n\n"
+            "you have no focus technique set.\n\n"
+            "use /technique to browse the library and pick one to focus on.",
+            parse_mode="Markdown",
         )
         return
-    
-    end_date = datetime.fromisoformat(active_drill["end_date"])
-    days_left = (end_date - datetime.now()).days
-    if days_left < 0:
-        days_left = 0
-        
-    count = active_drill.get("drilled_count", 0)
-    
+
+    start_date = active_drill.get("start_date", "")[:10]
+    end_date = active_drill.get("end_date", "")[:10]
+    days_left = 0
+    try:
+        end_dt = datetime.fromisoformat(active_drill["end_date"])
+        days_left = max(0, (end_dt - datetime.now()).days)
+    except (ValueError, KeyError):
+        pass
+
     message = (
-        "*active drill goal*\n\n"
+        "*current focus*\n\n"
         f"*{active_drill['technique']}*\n"
-        f"reps completed: {count}\n"
-        f"time remaining: {days_left} days\n\n"
-        f"_{active_drill['description']}_\n\n"
-        f"[watch tutorial]({active_drill['video_url']})\n\n"
-        "use /drilled when you practice it."
+        f"_{active_drill.get('description', '')}_\n\n"
+        f"started: {start_date}\n"
+        f"time left: {days_left} days\n\n"
+        f"[watch tutorial]({active_drill.get('video_url', '')})"
     )
-    
-    keyboard = [[InlineKeyboardButton("stop drilling this", callback_data="stop_drill")]]
+
+    keyboard = [
+        [InlineKeyboardButton("✓ learned it, move to toolbox", callback_data="focus_totoolbox")],
+        [InlineKeyboardButton("✕ stop focusing", callback_data="focus_stop")],
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await update.message.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
-async def stop_drill_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle focus-related inline buttons."""
     query = update.callback_query
     await query.answer()
-    
+    data = query.data
+
     database = load_database()
     active_drill = database.get("active_drill")
-    
-    if not active_drill:
-        await query.edit_message_text("no active drill to stop.")
-        return
-        
-    # save to history
-    database["drill_queue"].append({
-        "technique": active_drill["technique"],
-        "drilled_count": active_drill["drilled_count"],
-        "finished_at": datetime.now().isoformat()
-    })
-    
-    database["active_drill"] = None
-    save_database(database)
-    
-    await query.edit_message_text(
-        f"stopped drilling *{active_drill['technique']}*.\n\n"
-        "you completed it with {active_drill['drilled_count']} reps.\n"
-        "use /technique to choose a new one!",
-        parse_mode="Markdown"
-    )
 
+    if data == "focus_totoolbox":
+        if not active_drill:
+            await query.edit_message_text("no active focus to move.")
+            return
 
-async def drilled_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
-    active_drill = database.get("active_drill")
-    
-    if not active_drill:
-        await update.message.reply_text("you have no active drill to mark as done! use /technique to set one.")
-        return
-    
-    current_count = active_drill.get("drilled_count", 0)
-    database["active_drill"]["drilled_count"] = current_count + 1
-    
-    save_database(database)
-    
-    new_count = current_count + 1
-    
-    encouragement_messages = {
-        1: "first rep!",
-        2: "building muscle memory!",
-        3: "starting to stick!",
-        5: "getting solid!",
-        10: "second nature!",
-    }
-    
-    encouragement = encouragement_messages.get(new_count, f"rep #{new_count}")
-    
-    confirmation_message = f"*{active_drill['technique']}* ({new_count}x)\n\n{encouragement}"
-    await update.message.reply_text(confirmation_message, parse_mode="Markdown")
+        # add to toolbox
+        toolbox = database.get("toolbox", [])
+        key = active_drill.get("toolbox_key", "")
+        already_in = any(e["key"] == key for e in toolbox) if key else False
+
+        if key and not already_in:
+            toolbox.append({
+                "key": key,
+                "name": active_drill["technique"],
+                "category": active_drill.get("category", ""),
+                "added_at": datetime.now().isoformat(),
+            })
+
+        # save to history
+        database["drill_queue"].append({
+            "technique": active_drill["technique"],
+            "outcome": "toolbox",
+            "finished_at": datetime.now().isoformat(),
+        })
+
+        database["active_drill"] = None
+        save_database(database)
+
+        await query.edit_message_text(
+            f"✓ *{active_drill['technique']}* moved to your toolbox!\n\n"
+            "use /technique to pick a new focus or /toolbox to see what you know.",
+            parse_mode="Markdown",
+        )
+
+    elif data == "focus_stop":
+        if not active_drill:
+            await query.edit_message_text("no active focus to stop.")
+            return
+
+        # save to history
+        database["drill_queue"].append({
+            "technique": active_drill["technique"],
+            "outcome": "stopped",
+            "finished_at": datetime.now().isoformat(),
+        })
+
+        database["active_drill"] = None
+        save_database(database)
+
+        await query.edit_message_text(
+            f"stopped focusing on *{active_drill['technique']}*.\n\n"
+            "no worries, you can always come back to it later.\n"
+            "use /technique to pick a new one.",
+            parse_mode="Markdown",
+        )
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    from datetime import timedelta
     database = load_database()
-    
+
     total_notes = len(database["notes"])
     total_goals = len(database["goals"])
+    active_goals = sum(1 for g in database["goals"] if g.get("status", "active") == "active")
+    completed_goals = sum(1 for g in database["goals"] if g.get("status") == "completed")
 
     active_drill = database.get("active_drill")
-    active_drill_text = active_drill["technique"] if active_drill else "none"
-    
+    focus_text = active_drill["technique"] if active_drill else "none"
+
     if database["notes"]:
         all_dates = [note["date"] for note in database["notes"]]
         unique_dates = sorted(set(all_dates))
         first_date = unique_dates[0]
-        
+
         seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         this_week_notes = sum(1 for note in database["notes"] if note["date"] >= seven_days_ago)
     else:
@@ -144,7 +159,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current = current - timedelta(days=1)
         else:
             break
-    
+
     message = (
         "*training stats*\n\n"
         "*activity:*\n"
@@ -164,15 +179,20 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     toolbox_count = len(toolbox)
 
     message += (
-        f"\n*notes & drills:*\n"
-        f"  total notes: *{total_notes}*\n"
-        f"  notes this week: *{this_week_notes}*\n"
-        f"  goals set: *{total_goals}*\n"
-        f"  active drill: *{active_drill_text}*\n"
+        f"\n*progress:*\n"
+        f"  focus: *{focus_text}*\n"
+        f"  goals: *{active_goals}* active, *{completed_goals}* completed\n"
         f"  toolbox: *{toolbox_count}/{total_techniques}* techniques\n"
+        f"  notes: *{total_notes}* total, *{this_week_notes}* this week\n"
     )
-    
+
+    # past focuses
+    drill_history = database.get("drill_queue", [])
+    learned = sum(1 for d in drill_history if d.get("outcome") == "toolbox")
+    if drill_history:
+        message += f"  past focuses: *{len(drill_history)}* ({learned} moved to toolbox)\n"
+
     if database["notes"]:
         message += f"\n_training since {first_date}_"
-    
+
     await update.message.reply_text(message, parse_mode="Markdown")

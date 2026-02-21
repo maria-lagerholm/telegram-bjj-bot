@@ -147,7 +147,7 @@ TECHNIQUES = {
             },
             "bowandarrow": {
                 "name": "bow and arrow choke",
-                "description": "from back control, get a deep cross-collar grip. grab their far-side pants at the knee. extend your body and pull in opposite directions — collar toward you and leg away — while squeezing to finish.",
+                "description": "from back control, get a deep cross-collar grip. grab their far-side pants at the knee. extend your body and pull in opposite directions, collar toward you and leg away, while squeezing to finish.",
                 "video_url": "https://youtu.be/AFZldfpsG1c",
                 "block": 2,
             },
