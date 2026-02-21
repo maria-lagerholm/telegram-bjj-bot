@@ -15,7 +15,8 @@ DAY_TO_NUM = {d: i for i, d in enumerate(DAYS_OF_WEEK)}
 
 async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show current schedule and offer to add/clear."""
-    db = load_database()
+    chat_id = update.effective_chat.id
+    db = load_database(chat_id)
     schedule = db.get("schedule", [])
 
     message = "*your bjj schedule*\n\n"
@@ -97,7 +98,8 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("something went wrong. use /schedule again.")
             return
 
-        db = load_database()
+        chat_id = query.message.chat_id
+        db = load_database(chat_id)
 
         # avoid duplicates
         for entry in db["schedule"]:
@@ -113,10 +115,9 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "time": time_str,
             "added_at": datetime.now().isoformat(),
         })
-        save_database(db)
+        save_database(chat_id, db)
 
         # reschedule pre-training reminder jobs
-        chat_id = query.message.chat_id
         schedule_pretraining_jobs(context.application.job_queue, chat_id)
 
         await query.edit_message_text(
@@ -134,12 +135,12 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except ValueError:
             return
 
-        db = load_database()
+        chat_id = query.message.chat_id
+        db = load_database(chat_id)
         schedule = db.get("schedule", [])
         if 0 <= idx < len(schedule):
             removed = schedule.pop(idx)
-            save_database(db)
-            chat_id = query.message.chat_id
+            save_database(chat_id, db)
             schedule_pretraining_jobs(context.application.job_queue, chat_id)
             await query.edit_message_text(
                 f"removed *{removed['day']}* at {removed['time']}.\nuse /schedule to see updates.",
@@ -149,10 +150,10 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("entry not found. use /schedule.")
 
     elif data == "sched_clear":
-        db = load_database()
-        db["schedule"] = []
-        save_database(db)
         chat_id = query.message.chat_id
+        db = load_database(chat_id)
+        db["schedule"] = []
+        save_database(chat_id, db)
         schedule_pretraining_jobs(context.application.job_queue, chat_id)
         await query.edit_message_text("schedule cleared. use /schedule to set new training days.")
 

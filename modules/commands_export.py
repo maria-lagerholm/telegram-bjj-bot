@@ -32,7 +32,8 @@ async def export_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
 
-    database = load_database()
+    chat_id = query.message.chat_id
+    database = load_database(chat_id)
 
     if data == "export_txt":
         content = _build_txt_export(database)

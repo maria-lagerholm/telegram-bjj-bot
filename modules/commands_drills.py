@@ -7,7 +7,8 @@ from .database import load_database, save_database
 
 async def focus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show the user's current focus technique."""
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
     active_drill = database.get("active_drill")
 
     if not active_drill:
@@ -52,7 +53,8 @@ async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
 
-    database = load_database()
+    chat_id = query.message.chat_id
+    database = load_database(chat_id)
     active_drill = database.get("active_drill")
 
     if data == "focus_totoolbox":
@@ -81,7 +83,7 @@ async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         })
 
         database["active_drill"] = None
-        save_database(database)
+        save_database(chat_id, database)
 
         await query.edit_message_text(
             f"✓ *{active_drill['technique']}* moved to your toolbox!\n\n"
@@ -102,7 +104,7 @@ async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         })
 
         database["active_drill"] = None
-        save_database(database)
+        save_database(chat_id, database)
 
         await query.edit_message_text(
             f"stopped focusing on *{active_drill['technique']}*.\n\n"
@@ -113,7 +115,8 @@ async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
 
     total_notes = len(database["notes"])
     total_goals = len(database["goals"])

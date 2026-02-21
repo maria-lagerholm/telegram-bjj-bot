@@ -19,7 +19,8 @@ def _count_active_goals(database: dict) -> int:
 
 
 async def goal_start_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
     active_count = _count_active_goals(database)
 
     if active_count >= MAX_ACTIVE_GOALS:
@@ -45,7 +46,8 @@ async def goal_start_conversation(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def goal_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
 
     # double-check limit in case something changed
     if _count_active_goals(database) >= MAX_ACTIVE_GOALS:
@@ -69,7 +71,7 @@ async def goal_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     database["goals"].append(new_goal)
-    save_database(database)
+    save_database(chat_id, database)
 
     active_count = _count_active_goals(database)
     confirmation_message = f"goal saved for {week}:\n\n_{goal_text}_\n\n({active_count}/{MAX_ACTIVE_GOALS} goal slots used)"
@@ -78,7 +80,8 @@ async def goal_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def goals_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
 
     goals = database.get("goals", [])
     if not goals:
@@ -134,7 +137,8 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
     data = query.data
 
-    database = load_database()
+    chat_id = query.message.chat_id
+    database = load_database(chat_id)
     goals = database.get("goals", [])
 
     if data.startswith("goal_done_"):
@@ -154,7 +158,7 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             remind_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
             goal["refresh_schedule"].append(remind_date)
 
-        save_database(database)
+        save_database(chat_id, database)
 
         next_refresh = goal["refresh_schedule"][0]
         await query.edit_message_text(
@@ -176,7 +180,7 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             return
 
         goal["status"] = "removed"
-        save_database(database)
+        save_database(chat_id, database)
 
         await query.edit_message_text(f"removed: _{goal['goals']}_", parse_mode="Markdown")
 
@@ -190,7 +194,7 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # advance to next interval
         goal["refresh_index"] = goal.get("refresh_index", 0) + 1
-        save_database(database)
+        save_database(chat_id, database)
 
         remaining = len(goal.get("refresh_schedule", [])) - goal["refresh_index"]
         if remaining > 0:

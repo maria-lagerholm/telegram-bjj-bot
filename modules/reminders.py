@@ -8,7 +8,7 @@ from .helpers import get_current_week
 
 async def send_daily_focus_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
-    database = load_database()
+    database = load_database(chat_id)
 
     active_drill = database.get("active_drill")
     if not active_drill:
@@ -38,7 +38,7 @@ async def send_daily_focus_reminder(context: ContextTypes.DEFAULT_TYPE):
 
 async def send_weekly_goal_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
-    database = load_database()
+    database = load_database(chat_id)
     week = get_current_week()
     
     active_goals = [
@@ -66,7 +66,7 @@ async def send_daily_checkin(context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().strftime("%Y-%m-%d")
 
     # don't ask twice on the same day
-    database = load_database()
+    database = load_database(chat_id)
     for entry in database.get("training_log", []):
         if entry["date"] == today:
             return
@@ -97,7 +97,8 @@ async def checkin_callback(context_or_update, context=None):
     today = datetime.now().strftime("%Y-%m-%d")
     day_name = datetime.now().strftime("%A")
 
-    database = load_database()
+    chat_id = query.message.chat_id
+    database = load_database(chat_id)
 
     # prevent duplicate entries for the same day
     for entry in database.get("training_log", []):
@@ -112,7 +113,7 @@ async def checkin_callback(context_or_update, context=None):
         "trained": trained,
         "logged_at": datetime.now().isoformat(),
     })
-    save_database(database)
+    save_database(chat_id, database)
 
     if trained:
         # count current streak
@@ -151,7 +152,7 @@ def _get_current_streak(training_log: list) -> int:
 async def send_refresh_reminders(context: ContextTypes.DEFAULT_TYPE):
     """Check for completed goals that are due for a spaced repetition refresh."""
     chat_id = context.job.chat_id
-    database = load_database()
+    database = load_database(chat_id)
     today = datetime.now().strftime("%Y-%m-%d")
 
     for goal in database.get("goals", []):
@@ -192,7 +193,7 @@ async def send_refresh_reminders(context: ContextTypes.DEFAULT_TYPE):
 async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
     """1 hour before a scheduled class: send last session notes + active goals."""
     chat_id = context.job.chat_id
-    database = load_database()
+    database = load_database(chat_id)
 
     # --- last session note ---
     notes = database.get("notes", [])
@@ -252,7 +253,7 @@ def schedule_pretraining_jobs(job_queue, chat_id: int):
         if job.name and job.name.startswith(prefix):
             job.schedule_removal()
 
-    database = load_database()
+    database = load_database(chat_id)
     schedule = database.get("schedule", [])
 
     day_map = {
@@ -325,7 +326,7 @@ async def setup_reminders(update, context):
         name=goal_reminder_name,
     )
 
-    # daily check-in at 20:00 (evening – did you train today?)
+    # daily check-in at 20:00 (evening, did you train today?)
     job_queue.run_daily(
         send_daily_checkin,
         time=time(hour=20, minute=0),

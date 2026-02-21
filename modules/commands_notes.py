@@ -24,7 +24,8 @@ async def note_start_conversation(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
     note_text = update.message.text.strip()
     now = datetime.now()
     
@@ -41,7 +42,7 @@ async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     database["notes"].append(new_note)
     
-    save_database(database)
+    save_database(chat_id, database)
     
     reply = "note saved!\n\n"
     
@@ -74,7 +75,7 @@ def _extract_work_on(text: str) -> str | None:
     """Pull out what the user wants to work on from their note."""
     lower = text.lower()
 
-    # ordered list of trigger phrases – we grab everything after the first match
+    # ordered list of trigger phrases
     triggers = [
         "need to work on",
         "needs work",
@@ -129,7 +130,8 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await query.edit_message_text("couldn't find the goal text, use /goal to set one manually.")
             return
 
-        database = load_database()
+        chat_id = query.message.chat_id
+        database = load_database(chat_id)
 
         # enforce 3-goal limit
         active_count = sum(1 for g in database.get("goals", []) if g.get("status", "active") == "active")
@@ -151,7 +153,7 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "refresh_schedule": [],
             "refresh_index": 0,
         })
-        save_database(database)
+        save_database(chat_id, database)
 
         active_count += 1
         await query.edit_message_text(
@@ -159,7 +161,7 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parse_mode="Markdown",
         )
     else:
-        # "no thanks" – just clean up the message
+        # "no thanks"
         context.user_data.pop("pending_goal_text", None)
         original = query.message.text or ""
         # strip the "sounds like…" part, keep just the note-saved confirmation
@@ -168,7 +170,8 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def notes_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    database = load_database()
+    chat_id = update.effective_chat.id
+    database = load_database(chat_id)
     
     if not database["notes"]:
         await update.message.reply_text("no notes yet. use /note after training!")

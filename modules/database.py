@@ -4,13 +4,17 @@ from pathlib import Path
 data_directory = Path(__file__).parent.parent / "data"
 data_directory.mkdir(exist_ok=True)
 
-database_file = data_directory / "bot_data.json"
 protocol_file = Path(__file__).parent.parent / "bjj_white_belt_guide.txt"
 
 
-def load_database():
-    if database_file.exists():
-        with open(database_file, "r") as file:
+def _user_file(chat_id: int) -> Path:
+    return data_directory / f"user_{chat_id}.json"
+
+
+def load_database(chat_id: int) -> dict:
+    path = _user_file(chat_id)
+    if path.exists():
+        with open(path, "r") as file:
             data = json.load(file)
             if "active_drill" not in data:
                 data["active_drill"] = None
@@ -21,7 +25,7 @@ def load_database():
             if "schedule" not in data:
                 data["schedule"] = []
             return data
-    
+
     new_database = {
         "goals": [],
         "notes": [],
@@ -34,8 +38,9 @@ def load_database():
     return new_database
 
 
-def save_database(database):
-    with open(database_file, "w") as file:
+def save_database(chat_id: int, database: dict):
+    path = _user_file(chat_id)
+    with open(path, "w") as file:
         json.dump(database, file, indent=2, default=str)
 
 

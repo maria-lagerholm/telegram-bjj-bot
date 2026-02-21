@@ -72,7 +72,8 @@ async def habits_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def technique_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    db = load_database()
+    chat_id = update.effective_chat.id
+    db = load_database(chat_id)
     toolbox = _get_toolbox(db)
 
     keyboard = []
@@ -99,7 +100,8 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.answer()
 
     data = query.data
-    db = load_database()
+    chat_id = query.message.chat_id
+    db = load_database(chat_id)
     toolbox = _get_toolbox(db)
 
     if data == "tech_main":
@@ -189,7 +191,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 "category": TECHNIQUES[cat_id]["name"],
                 "added_at": datetime.now().isoformat(),
             })
-            save_database(db)
+            save_database(chat_id, db)
 
         # refresh the technique view with updated button
         keyboard = [
@@ -220,7 +222,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         key = _toolbox_key(cat_id, tech_id)
 
         db["toolbox"] = [e for e in db.get("toolbox", []) if e["key"] != key]
-        save_database(db)
+        save_database(chat_id, db)
 
         keyboard = [
             [InlineKeyboardButton("focus on this (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
@@ -248,7 +250,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         tech = TECHNIQUES[cat_id]["items"][tech_id]
 
-        db = load_database()
+        db = load_database(chat_id)
 
         # 14 days from now
         end_date = datetime.now() + timedelta(days=14)
@@ -263,7 +265,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "end_date": end_date.isoformat(),
         }
 
-        save_database(db)
+        save_database(chat_id, db)
 
         text = (
             f"*{tech['name']}* set as your focus!\n\n"
@@ -279,7 +281,8 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def toolbox_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show all techniques the user has marked as known."""
-    db = load_database()
+    chat_id = update.effective_chat.id
+    db = load_database(chat_id)
     toolbox = db.get("toolbox", [])
 
     if not toolbox:
