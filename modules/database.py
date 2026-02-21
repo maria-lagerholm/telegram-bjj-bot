@@ -41,7 +41,7 @@ def load_database(chat_id: int) -> dict:
 def save_database(chat_id: int, database: dict):
     path = _user_file(chat_id)
     with open(path, "w") as file:
-        json.dump(database, file, indent=2, default=str)
+        json.dump(database, file, indent=2, default=str, ensure_ascii=False)
 
 
 def get_protocol_text():
