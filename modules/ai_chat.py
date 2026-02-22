@@ -4,7 +4,6 @@ import re
 import asyncio
 import logging
 from datetime import datetime
-from pathlib import Path
 
 from google import genai
 from google.genai import types
@@ -12,7 +11,8 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database, data_directory
-from .ai_tools import all_tools, tool_executors
+from .ai_tools import action_tools, tool_executors
+from .ai_tools import exec_get_notes, exec_get_goals, exec_get_schedule, exec_get_focus, exec_get_stats
 from .ai_guards import is_off_topic, clean_response
 
 logger = logging.getLogger(__name__)
@@ -31,20 +31,17 @@ model_candidates = [
     "gemini-2.0-flash-lite-001",
 ]
 
-system_instruction = (
+base_system_instruction = (
     "You are a casual BJJ training buddy inside a Telegram bot.\n"
     "\n"
-    "ABSOLUTE RULE: NEVER make up or assume user data.\n"
-    "You MUST call the appropriate tool FIRST to fetch data before answering.\n"
-    "  user asks about notes or training history -> call get_training_notes\n"
-    "  user asks about goals or what to work on -> call get_goals\n"
-    "  user asks about schedule or next training -> call get_schedule\n"
-    "  user asks about focus, toolbox, or what they know -> call get_focus_and_toolbox\n"
-    "  user asks about stats, progress, or streak -> call get_training_stats\n"
-    "  user mentions any technique name -> call search_technique\n"
-    "  user asks what techniques exist or asks for a list -> call list_techniques\n"
-    "  user says hi, hello, or greets you -> call get_goals AND get_focus_and_toolbox to give a useful greeting\n"
-    "If in doubt, call the tool. Never guess what the user's data contains.\n"
+    "IMPORTANT: The user's current training data is provided below in YOUR_DATA section.\n"
+    "Use that data directly when answering. Do NOT make up data that is not there.\n"
+    "If the user asks about their notes, goals, schedule, focus, or stats, use the data below.\n"
+    "\n"
+    "When the user mentions a technique name, call search_technique to look it up.\n"
+    "When the user asks what techniques are available, call list_techniques.\n"
+    "When the user describes training and confirms they want to save it, call save_training_note.\n"
+    "Never save a note without the user confirming first.\n"
     "\n"
     "ONLY discuss BJJ, martial arts, fitness, and this user's training.\n"
     "If the user asks about unrelated topics, politely say you can only help with training.\n"
@@ -56,12 +53,8 @@ system_instruction = (
     "Never use markdown headers. Keep it simple chat text.\n"
     "Never use emojis in your text. Zero emojis.\n"
     "Do NOT write any URLs in your reply. The system will automatically attach the correct video links.\n"
-    "When the user describes what they practiced or learned today, ask if they want to save it as a note.\n"
-    "If they confirm, call save_training_note with a short summary (max 20 words) of what they said.\n"
-    "Never save a note without the user confirming first.\n"
     "\n"
-    "CRITICAL RULE: ALWAYS end your reply with the most relevant command the user can type next.\n"
-    "Every tool result includes a COMMAND hint. Always include that command in your reply.\n"
+    "ALWAYS end your reply with the most relevant command the user can type next.\n"
     "Available commands:\n"
     "  /note  log a training note\n"
     "  /notes  view saved notes\n"
@@ -77,6 +70,34 @@ system_instruction = (
     "  /map  see the full bot feature map\n"
     "  /help  open the main menu\n"
 )
+
+
+def build_user_context(chat_id):
+    """Pre-fetch all user data and return it as a text block for the system prompt."""
+    sections = []
+
+    notes_data = exec_get_notes(chat_id, {"count": 5})
+    sections.append(f"NOTES:\n{notes_data}")
+
+    goals_data = exec_get_goals(chat_id, {})
+    sections.append(f"GOALS:\n{goals_data}")
+
+    schedule_data = exec_get_schedule(chat_id, {})
+    sections.append(f"SCHEDULE:\n{schedule_data}")
+
+    focus_data = exec_get_focus(chat_id, {})
+    sections.append(f"FOCUS AND TOOLBOX:\n{focus_data}")
+
+    stats_data = exec_get_stats(chat_id, {})
+    sections.append(f"STATS:\n{stats_data}")
+
+    return "\n\n".join(sections)
+
+
+def build_system_instruction(chat_id):
+    """Build a full system instruction with the user's live data embedded."""
+    context = build_user_context(chat_id)
+    return base_system_instruction + f"\n\n--- YOUR_DATA ---\n{context}\n--- END YOUR_DATA ---\n"
 
 
 def get_remaining_messages(db):
@@ -164,7 +185,7 @@ def get_gemini_client():
 
 def build_gemini_tools():
     gemini_tools = []
-    for t in all_tools:
+    for t in action_tools:
         properties = {}
         for k, v in t["parameters"].get("properties", {}).items():
             if v.get("type") == "string":
@@ -306,8 +327,10 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     gemini_tools = build_gemini_tools()
+    full_system_instruction = build_system_instruction(chat_id)
+
     chat_config = types.GenerateContentConfig(
-        system_instruction=system_instruction,
+        system_instruction=full_system_instruction,
         tools=gemini_tools,
         tool_config=types.ToolConfig(
             function_calling_config=types.FunctionCallingConfig(
@@ -336,90 +359,96 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     chat_session = session["chat"] if session else None
     used_model = session["model_name"] if session else None
 
+    message_parts = []
+    if voice_bytes:
+        message_parts.append(
+            types.Part.from_bytes(data=voice_bytes, mime_type=voice_mime)
+        )
+        message_parts.append(
+            types.Part(text="(the user sent a voice message, respond to what they said)")
+        )
+    if user_text:
+        message_parts.append(types.Part(text=user_text))
+
     last_error = None
+    retry_delay = 1.0
+
     for model_name in model_candidates:
-        try:
-            if chat_session and used_model == model_name:
-                chat = chat_session
-            else:
-                past = load_history(chat_id)
-                chat = client.chats.create(
-                    model=model_name,
-                    config=chat_config,
-                    history=past,
-                )
+        for attempt in range(3):
+            try:
+                if chat_session and used_model == model_name and attempt == 0:
+                    chat = chat_session
+                else:
+                    past = load_history(chat_id)
+                    chat = client.chats.create(
+                        model=model_name,
+                        config=chat_config,
+                        history=past,
+                    )
 
-            message_parts = []
-            if voice_bytes:
-                message_parts.append(
-                    types.Part.from_bytes(data=voice_bytes, mime_type=voice_mime)
-                )
-                message_parts.append(
-                    types.Part(text="(the user sent a voice message, respond to what they said)")
-                )
-            if user_text:
-                message_parts.append(types.Part(text=user_text))
+                response = chat.send_message(message_parts)
+                response, collected_urls = await run_tool_loop(chat, chat_id, response)
 
-            response = chat.send_message(message_parts)
+                reply_text = ""
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, "text") and part.text:
+                        reply_text += part.text
 
-            response, collected_urls = await run_tool_loop(chat, chat_id, response)
+                if not reply_text:
+                    reply_text = "i can help with your BJJ training. try asking about your notes, goals, or schedule!"
 
-            reply_text = ""
-            for part in response.candidates[0].content.parts:
-                if hasattr(part, "text") and part.text:
-                    reply_text += part.text
+                reply_text = clean_response(reply_text)
 
-            if not reply_text:
-                reply_text = "i can help with your BJJ training. try asking about your notes, goals, or schedule!"
+                if collected_urls:
+                    reply_text = re.sub(r'https?://\S+', '', reply_text).strip()
+                    reply_text = re.sub(r'\s{2,}', ' ', reply_text).strip()
+                    reply_text = reply_text.rstrip(':').strip()
+                    for url in collected_urls:
+                        reply_text += f"\n{url}"
 
-            reply_text = clean_response(reply_text)
+                user_sessions[chat_id] = {
+                    "chat": chat,
+                    "model_name": model_name,
+                    "last_used": now,
+                }
 
-            if collected_urls:
-                reply_text = re.sub(r'https?://\S+', '', reply_text).strip()
-                reply_text = re.sub(r'\s{2,}', ' ', reply_text).strip()
-                reply_text = reply_text.rstrip(':').strip()
-                for url in collected_urls:
-                    reply_text += f"\n{url}"
+                history_user_text = user_text if user_text else "(voice message)"
+                save_history(chat_id, history_user_text, reply_text)
 
-            user_sessions[chat_id] = {
-                "chat": chat,
-                "model_name": model_name,
-                "last_used": now,
-            }
+                increment_usage(chat_id, db)
+                increment_global_usage()
+                remaining = remaining - 1
 
-            history_user_text = user_text if user_text else "(voice message)"
-            save_history(chat_id, history_user_text, reply_text)
+                if remaining <= 3:
+                    reply_text += f"\n\n({remaining} ai messages left today)"
 
-            increment_usage(chat_id, db)
-            increment_global_usage()
-            remaining = remaining - 1
+                await update.message.reply_text(reply_text)
+                return
 
-            if remaining <= 3:
-                reply_text += f"\n\n({remaining} ai messages left today)"
+            except Exception as err:
+                last_error = err
+                err_str = str(err).lower()
+                is_rate_limit = "429" in err_str or "quota" in err_str or "rate" in err_str
+                is_not_found = "404" in err_str or "not found" in err_str or "no longer available" in err_str or "not supported" in err_str
 
-            await update.message.reply_text(reply_text)
-            return
+                if is_rate_limit and attempt < 2:
+                    logger.warning(f"{model_name} rate limited (attempt {attempt + 1}), waiting {retry_delay}s")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay = min(retry_delay * 2, 10.0)
+                    chat_session = None
+                    used_model = None
+                    continue
 
-        except Exception as err:
-            last_error = err
-            err_str = str(err).lower()
-            is_rate_limit = "429" in err_str or "quota" in err_str or "rate" in err_str
-            is_not_found = "404" in err_str or "not found" in err_str or "no longer available" in err_str or "not supported" in err_str
+                if is_not_found:
+                    logger.warning(f"{model_name} not found, trying next model")
+                    break
 
-            if chat_session and used_model == model_name:
-                chat_session = None
-                used_model = None
-                logger.warning(f"session expired for {chat_id}, retrying fresh")
-                continue
+                if is_rate_limit:
+                    logger.warning(f"{model_name} rate limited after retries, trying next model")
+                    break
 
-            if (is_rate_limit or is_not_found) and model_name != model_candidates[-1]:
-                logger.warning(f"{model_name} unavailable, trying next: {err}")
-                delay = 2.0 if is_rate_limit else 0.5
-                await asyncio.sleep(delay)
-                continue
-
-            logger.error(f"Gemini error ({model_name}) for chat {chat_id}: {err}")
-            break
+                logger.error(f"Gemini error ({model_name}) for chat {chat_id}: {err}")
+                break
 
     user_sessions.pop(chat_id, None)
     err_str = str(last_error).lower() if last_error else ""

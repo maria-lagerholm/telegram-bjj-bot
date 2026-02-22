@@ -152,6 +152,14 @@ all_tools = [
     tool_save_note,
 ]
 
+# Action-only tools: these actually do something or search.
+# Read tools (notes, goals, schedule, focus, stats) are pre-fetched into the system prompt.
+action_tools = [
+    tool_search_technique,
+    tool_list_techniques,
+    tool_save_note,
+]
+
 
 def exec_get_notes(chat_id, args):
     db = load_database(chat_id)
