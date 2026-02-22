@@ -33,7 +33,19 @@ model_candidates = [
 
 system_instruction = (
     "You are a casual BJJ training buddy inside a Telegram bot.\n"
-    "Use the provided tools to look up the user's notes, goals, schedule, and stats.\n"
+    "\n"
+    "ABSOLUTE RULE: NEVER make up or assume user data.\n"
+    "You MUST call the appropriate tool FIRST to fetch data before answering.\n"
+    "  user asks about notes or training history -> call get_training_notes\n"
+    "  user asks about goals or what to work on -> call get_goals\n"
+    "  user asks about schedule or next training -> call get_schedule\n"
+    "  user asks about focus, toolbox, or what they know -> call get_focus_and_toolbox\n"
+    "  user asks about stats, progress, or streak -> call get_training_stats\n"
+    "  user mentions any technique name -> call search_technique\n"
+    "  user asks what techniques exist or asks for a list -> call list_techniques\n"
+    "  user says hi, hello, or greets you -> call get_goals AND get_focus_and_toolbox to give a useful greeting\n"
+    "If in doubt, call the tool. Never guess what the user's data contains.\n"
+    "\n"
     "ONLY discuss BJJ, martial arts, fitness, and this user's training.\n"
     "If the user asks about unrelated topics, politely say you can only help with training.\n"
     "Reply in the SAME language the user writes in.\n"
@@ -43,11 +55,6 @@ system_instruction = (
     "Never use dashes as punctuation. Use commas or periods instead.\n"
     "Never use markdown headers. Keep it simple chat text.\n"
     "Never use emojis in your text. Zero emojis.\n"
-    "IMPORTANT: when a technique is mentioned (by you or the user), ALWAYS call search_technique first.\n"
-    "When the user asks what techniques are available, what to practice, or asks to see a list, "
-    "ALWAYS call list_techniques with the relevant category. Present ALL results from the tool, not just some.\n"
-    "For category questions like 'what escapes are there', call list_techniques with category='escapes'.\n"
-    "If the user says a general topic like 'escapes' or 'sweeps', call list_techniques for that category.\n"
     "Do NOT write any URLs in your reply. The system will automatically attach the correct video links.\n"
     "When the user describes what they practiced or learned today, ask if they want to save it as a note.\n"
     "If they confirm, call save_training_note with a short summary (max 20 words) of what they said.\n"
@@ -199,31 +206,36 @@ def execute_tool_call(chat_id, part):
     return fn_name, result
 
 
-async def run_tool_loop(chat, chat_id, response, max_rounds=3):
+async def run_tool_loop(chat, chat_id, response, max_rounds=5):
     collected_urls = []
     for _ in range(max_rounds):
-        part = response.candidates[0].content.parts[0]
-        if not (hasattr(part, "function_call") and part.function_call and part.function_call.name):
+        parts = response.candidates[0].content.parts if response.candidates else []
+        function_parts = [p for p in parts if p.function_call and p.function_call.name]
+        if not function_parts:
             break
 
-        fn_name, result = execute_tool_call(chat_id, part)
+        response_parts = []
+        for fp in function_parts:
+            fn_name, result = execute_tool_call(chat_id, fp)
 
-        result_urls = []
-        for line in str(result).splitlines():
-            stripped = line.strip()
-            if stripped.startswith("EXACT_VIDEO_URL:"):
-                url = stripped.split("EXACT_VIDEO_URL:", 1)[1].strip()
-                if url:
-                    result_urls.append(url)
-        if len(result_urls) <= 3:
-            collected_urls.extend(result_urls)
+            result_urls = []
+            for line in str(result).splitlines():
+                stripped = line.strip()
+                if stripped.startswith("EXACT_VIDEO_URL:"):
+                    url = stripped.split("EXACT_VIDEO_URL:", 1)[1].strip()
+                    if url:
+                        result_urls.append(url)
+            if len(result_urls) <= 3:
+                collected_urls.extend(result_urls)
 
-        response = chat.send_message(
-            types.Part.from_function_response(
-                name=fn_name,
-                response={"result": str(result)},
+            response_parts.append(
+                types.Part.from_function_response(
+                    name=fn_name,
+                    response={"result": str(result)},
+                )
             )
-        )
+
+        response = chat.send_message(response_parts)
     return response, collected_urls
 
 
@@ -283,10 +295,21 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     await context.bot.send_chat_action(chat_id=chat_id, action="typing")
 
     client = get_gemini_client()
+    if not client:
+        await update.message.reply_text(
+            "ai chat is not available right now. use /help to see what i can do!"
+        )
+        return
+
     gemini_tools = build_gemini_tools()
     chat_config = types.GenerateContentConfig(
         system_instruction=system_instruction,
         tools=gemini_tools,
+        tool_config=types.ToolConfig(
+            function_calling_config=types.FunctionCallingConfig(
+                mode="AUTO",
+            )
+        ),
     )
 
     session = user_sessions.get(chat_id)
