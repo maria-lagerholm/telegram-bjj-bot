@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
-from .techniques_data import techniques
+from .techniques_data import all_techniques
 from .database import load_database, save_database
 
 
@@ -23,7 +23,7 @@ async def technique_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     toolbox = get_toolbox(db)
 
     keyboard = []
-    for cat_id, cat_data in techniques.items():
+    for cat_id, cat_data in all_techniques.items():
         total = len(cat_data["items"])
         known = 0
         for tech_id in cat_data["items"]:
@@ -51,7 +51,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if data == "tech_main":
         keyboard = []
-        for cat_id, cat_data in techniques.items():
+        for cat_id, cat_data in all_techniques.items():
             total = len(cat_data["items"])
             known = 0
             for tech_id in cat_data["items"]:
@@ -72,10 +72,10 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if data.startswith("techcat_"):
         cat_id = data.split("_")[1]
-        if cat_id not in techniques:
+        if cat_id not in all_techniques:
             return
 
-        category = techniques[cat_id]
+        category = all_techniques[cat_id]
         keyboard = []
         for tech_id, tech_data in category["items"].items():
             key = toolbox_key(cat_id, tech_id)
@@ -99,10 +99,10 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         cat_id = parts[1]
         tech_id = parts[2]
 
-        if cat_id not in techniques or tech_id not in techniques[cat_id]["items"]:
+        if cat_id not in all_techniques or tech_id not in all_techniques[cat_id]["items"]:
             return
 
-        tech = techniques[cat_id]["items"][tech_id]
+        tech = all_techniques[cat_id]["items"][tech_id]
         key = toolbox_key(cat_id, tech_id)
         known = key in toolbox
 
@@ -130,17 +130,17 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         cat_id = parts[1]
         tech_id = parts[2]
 
-        if cat_id not in techniques or tech_id not in techniques[cat_id]["items"]:
+        if cat_id not in all_techniques or tech_id not in all_techniques[cat_id]["items"]:
             return
 
-        tech = techniques[cat_id]["items"][tech_id]
+        tech = all_techniques[cat_id]["items"][tech_id]
         key = toolbox_key(cat_id, tech_id)
 
         if key not in toolbox:
             db["toolbox"].append({
                 "key": key,
                 "name": tech["name"],
-                "category": techniques[cat_id]["name"],
+                "category": all_techniques[cat_id]["name"],
                 "added_at": datetime.now().isoformat(),
             })
             save_database(chat_id, db)
@@ -165,10 +165,10 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         cat_id = parts[1]
         tech_id = parts[2]
 
-        if cat_id not in techniques or tech_id not in techniques[cat_id]["items"]:
+        if cat_id not in all_techniques or tech_id not in all_techniques[cat_id]["items"]:
             return
 
-        tech = techniques[cat_id]["items"][tech_id]
+        tech = all_techniques[cat_id]["items"][tech_id]
         key = toolbox_key(cat_id, tech_id)
 
         new_toolbox = []
@@ -199,10 +199,10 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         cat_id = parts[1]
         tech_id = parts[2]
 
-        if cat_id not in techniques or tech_id not in techniques[cat_id]["items"]:
+        if cat_id not in all_techniques or tech_id not in all_techniques[cat_id]["items"]:
             return
 
-        tech = techniques[cat_id]["items"][tech_id]
+        tech = all_techniques[cat_id]["items"][tech_id]
 
         db = load_database(chat_id)
 
@@ -253,7 +253,7 @@ async def toolbox_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         by_category[cat].append(entry["name"])
 
     total_available = 0
-    for cat in techniques.values():
+    for cat in all_techniques.values():
         total_available += len(cat["items"])
     total_known = len(toolbox)
 

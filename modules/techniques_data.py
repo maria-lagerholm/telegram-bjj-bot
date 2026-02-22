@@ -1,4 +1,4 @@
-techniques = {
+all_techniques = {
     "escapes": {
         "name": "escapes",
         "items": {

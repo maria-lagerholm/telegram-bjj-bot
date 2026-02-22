@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
-from .techniques_data import techniques
+from .techniques_data import all_techniques
 from .database import load_database
 from .commands_techniques import toolbox_key, get_toolbox
 from .app_map import render_app_map
@@ -233,7 +233,7 @@ async def dispatch_menu_command(cmd, query, context):
         db = load_database(chat_id)
         toolbox_set = get_toolbox(db)
         keyboard = []
-        for cat_id, cat_data in techniques.items():
+        for cat_id, cat_data in all_techniques.items():
             total = len(cat_data["items"])
             known = 0
             for tech_id in cat_data["items"]:
@@ -267,7 +267,7 @@ async def dispatch_menu_command(cmd, query, context):
                 by_category[cat] = []
             by_category[cat].append(entry["name"])
         total_available = 0
-        for cat in techniques.values():
+        for cat in all_techniques.values():
             total_available += len(cat["items"])
         total_known = len(toolbox)
         message = f"*your toolbox* ({total_known}/{total_available})\n\n"
@@ -430,7 +430,7 @@ async def dispatch_menu_command(cmd, query, context):
                 break
         toolbox = db.get("toolbox", [])
         total_techniques = 0
-        for cat in techniques.values():
+        for cat in all_techniques.values():
             total_techniques += len(cat["items"])
         message = (
             "*training stats*\n\n"

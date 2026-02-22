@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import re
@@ -7,7 +6,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -140,20 +140,19 @@ def load_history(chat_id):
         text = entry.get("text", "")
         if text:
             contents.append(
-                genai.protos.Content(
+                types.Content(
                     role=role,
-                    parts=[genai.protos.Part(text=text)],
+                    parts=[types.Part(text=text)],
                 )
             )
     return contents
 
 
-def configure_gemini():
+def get_gemini_client():
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
-        return False
-    genai.configure(api_key=api_key)
-    return True
+        return None
+    return genai.Client(api_key=api_key)
 
 
 def build_gemini_tools():
@@ -162,20 +161,20 @@ def build_gemini_tools():
         properties = {}
         for k, v in t["parameters"].get("properties", {}).items():
             if v.get("type") == "string":
-                prop_type = genai.protos.Type.STRING
+                prop_type = types.Type.STRING
             else:
-                prop_type = genai.protos.Type.INTEGER
-            properties[k] = genai.protos.Schema(
+                prop_type = types.Type.INTEGER
+            properties[k] = types.Schema(
                 type=prop_type,
                 description=v.get("description", ""),
             )
-        gemini_tools.append(genai.protos.Tool(
+        gemini_tools.append(types.Tool(
             function_declarations=[
-                genai.protos.FunctionDeclaration(
+                types.FunctionDeclaration(
                     name=t["name"],
                     description=t["description"],
-                    parameters=genai.protos.Schema(
-                        type=genai.protos.Type.OBJECT,
+                    parameters=types.Schema(
+                        type=types.Type.OBJECT,
                         properties=properties,
                     ),
                 )
@@ -204,7 +203,7 @@ async def run_tool_loop(chat, chat_id, response, max_rounds=3):
     collected_urls = []
     for _ in range(max_rounds):
         part = response.candidates[0].content.parts[0]
-        if not hasattr(part, "function_call") or not part.function_call.name:
+        if not (hasattr(part, "function_call") and part.function_call and part.function_call.name):
             break
 
         fn_name, result = execute_tool_call(chat_id, part)
@@ -220,15 +219,9 @@ async def run_tool_loop(chat, chat_id, response, max_rounds=3):
             collected_urls.extend(result_urls)
 
         response = chat.send_message(
-            genai.protos.Content(
-                parts=[
-                    genai.protos.Part(
-                        function_response=genai.protos.FunctionResponse(
-                            name=fn_name,
-                            response={"result": result},
-                        )
-                    )
-                ]
+            types.Part.from_function_response(
+                name=fn_name,
+                response={"result": str(result)},
             )
         )
     return response, collected_urls
@@ -289,8 +282,12 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await context.bot.send_chat_action(chat_id=chat_id, action="typing")
 
-    configure_gemini()
+    client = get_gemini_client()
     gemini_tools = build_gemini_tools()
+    chat_config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        tools=gemini_tools,
+    )
 
     session = user_sessions.get(chat_id)
     now = datetime.now()
@@ -318,35 +315,25 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             if chat_session and used_model == model_name:
                 chat = chat_session
             else:
-                model = genai.GenerativeModel(
-                    model_name=model_name,
-                    system_instruction=system_instruction,
-                    tools=gemini_tools,
-                )
                 past = load_history(chat_id)
-                chat = model.start_chat(history=past)
+                chat = client.chats.create(
+                    model=model_name,
+                    config=chat_config,
+                    history=past,
+                )
 
             message_parts = []
             if voice_bytes:
                 message_parts.append(
-                    genai.protos.Part(
-                        inline_data=genai.protos.Blob(
-                            mime_type=voice_mime,
-                            data=voice_bytes,
-                        )
-                    )
+                    types.Part.from_bytes(data=voice_bytes, mime_type=voice_mime)
                 )
                 message_parts.append(
-                    genai.protos.Part(
-                        text="(the user sent a voice message, respond to what they said)"
-                    )
+                    types.Part(text="(the user sent a voice message, respond to what they said)")
                 )
             if user_text:
-                message_parts.append(genai.protos.Part(text=user_text))
+                message_parts.append(types.Part(text=user_text))
 
-            response = chat.send_message(
-                genai.protos.Content(role="user", parts=message_parts)
-            )
+            response = chat.send_message(message_parts)
 
             response, collected_urls = await run_tool_loop(chat, chat_id, response)
 
@@ -410,7 +397,6 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             break
 
     user_sessions.pop(chat_id, None)
-    err_str = str(last_error) if last_error else ""
     logger.error(f"Gemini API error for chat {chat_id}: {last_error}")
     await update.message.reply_text(
         "the ai assistant is temporarily overloaded. you can still use all the commands from the menu!"

@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
-from .techniques_data import techniques
+from .techniques_data import all_techniques
 
 
 async def focus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -182,7 +182,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     toolbox = database.get("toolbox", [])
     total_techniques = 0
-    for cat in techniques.values():
+    for cat in all_techniques.values():
         total_techniques += len(cat["items"])
     toolbox_count = len(toolbox)
 
