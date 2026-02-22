@@ -81,6 +81,13 @@ async def import_receive_file(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("please send a .json file.")
         return state_import_waiting
 
+    max_file_size = 1_000_000
+    if doc.file_size and doc.file_size > max_file_size:
+        await update.message.reply_text(
+            "that file is too large. max size is 1 MB."
+        )
+        return state_import_waiting
+
     if not doc.file_name.endswith(".json"):
         await update.message.reply_text(
             "that doesn't look like a .json file. please send the backup file you exported."

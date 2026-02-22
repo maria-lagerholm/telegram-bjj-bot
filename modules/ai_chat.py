@@ -17,8 +17,8 @@ from .ai_guards import is_off_topic, clean_response
 
 logger = logging.getLogger(__name__)
 
-daily_message_limit = 100
-max_history_messages = 20
+daily_message_limit = 200
+max_history_messages = 40
 
 user_sessions = {}
 session_timeout_minutes = 30
@@ -38,10 +38,19 @@ base_system_instruction = (
     "Use that data directly when answering. Do NOT make up data that is not there.\n"
     "If the user asks about their notes, goals, schedule, focus, or stats, use the data below.\n"
     "\n"
-    "When the user mentions a technique name, call search_technique to look it up.\n"
-    "When the user asks what techniques are available, call list_techniques.\n"
-    "When the user describes training and confirms they want to save it, call save_training_note.\n"
-    "Never save a note without the user confirming first.\n"
+    "TOOL RULES (follow strictly):\n"
+    "1. When the user mentions a technique name, call search_technique to find it.\n"
+    "2. When the user asks what techniques are available, call list_techniques.\n"
+    "3. When the user describes training and says YES to saving, call save_training_note ONCE.\n"
+    "   After the tool returns success, just confirm to the user. Do NOT call it again.\n"
+    "4. When the user wants to focus on or drill a technique, first call search_technique,\n"
+    "   then call set_focus_technique with the technique_key from the result.\n"
+    "5. When the user wants to set a goal, call add_goal with the goal text (1 to 7 words).\n"
+    "6. When the user says they train on a day/time, call add_schedule_entry.\n"
+    "7. When the user says they know a technique, call add_to_toolbox.\n"
+    "\n"
+    "CRITICAL: After a tool returns a success result, do NOT call the same tool again.\n"
+    "Just confirm the action to the user in one short sentence.\n"
     "\n"
     "ONLY discuss BJJ, martial arts, fitness, and this user's training.\n"
     "If the user asks about unrelated topics, politely say you can only help with training.\n"
@@ -229,14 +238,28 @@ def execute_tool_call(chat_id, part):
 
 async def run_tool_loop(chat, chat_id, response, max_rounds=5):
     collected_urls = []
+    completed_calls = set()
+
     for _ in range(max_rounds):
         parts = response.candidates[0].content.parts if response.candidates else []
         function_parts = [p for p in parts if p.function_call and p.function_call.name]
         if not function_parts:
             break
 
-        response_parts = []
+        new_calls = []
         for fp in function_parts:
+            call_key = fp.function_call.name
+            args_str = str(dict(fp.function_call.args)) if fp.function_call.args else ""
+            dedup_key = f"{call_key}:{args_str}"
+            if dedup_key not in completed_calls:
+                new_calls.append(fp)
+                completed_calls.add(dedup_key)
+
+        if not new_calls:
+            break
+
+        response_parts = []
+        for fp in new_calls:
             fn_name, result = execute_tool_call(chat_id, fp)
 
             result_urls = []
@@ -365,7 +388,13 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             types.Part.from_bytes(data=voice_bytes, mime_type=voice_mime)
         )
         message_parts.append(
-            types.Part(text="(the user sent a voice message, respond to what they said)")
+            types.Part(text=(
+                "(voice message from user. transcribe it and respond in the same language. "
+                "if they describe training, ask to save as note. "
+                "if they mention a technique, search for it. "
+                "if they want to set a goal, focus, or schedule, use the right tool. "
+                "respond to what they said.)"
+            ))
         )
     if user_text:
         message_parts.append(types.Part(text=user_text))

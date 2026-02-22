@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta
 
 from .database import load_database, save_database
@@ -141,6 +142,89 @@ tool_save_note = {
     },
 }
 
+tool_set_focus = {
+    "name": "set_focus_technique",
+    "description": (
+        "Set a BJJ technique as the user's current focus for 2 weeks. "
+        "Call this when the user says they want to focus on, drill, or practice a specific technique. "
+        "First call search_technique to find the exact technique, then call this with the technique key. "
+        "The technique_key must be in the format 'category:techid' (e.g. 'submissions:kimura')."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "technique_key": {
+                "type": "string",
+                "description": "The technique key in format 'category:techid', e.g. 'submissions:kimura'.",
+            }
+        },
+        "required": ["technique_key"],
+    },
+}
+
+tool_add_goal = {
+    "name": "add_goal",
+    "description": (
+        "Add a new training goal for the user. "
+        "Call this when the user says they want to set a goal or work on something specific. "
+        "The goal must be 1 to 7 words. The user can have at most 3 active goals. "
+        "Ask the user to confirm before saving."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "goal_text": {
+                "type": "string",
+                "description": "The goal text (1 to 7 words).",
+            }
+        },
+        "required": ["goal_text"],
+    },
+}
+
+tool_add_schedule = {
+    "name": "add_schedule_entry",
+    "description": (
+        "Add a training day and time to the user's schedule. "
+        "Call this when the user says they train on a specific day and time. "
+        "Day must be one of: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday. "
+        "Time must be in HH:MM format (e.g. '18:30')."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "day": {
+                "type": "string",
+                "description": "Day of the week, e.g. 'Monday', 'Tuesday'.",
+            },
+            "time": {
+                "type": "string",
+                "description": "Time in HH:MM format, e.g. '18:30'.",
+            },
+        },
+        "required": ["day", "time"],
+    },
+}
+
+tool_add_to_toolbox = {
+    "name": "add_to_toolbox",
+    "description": (
+        "Mark a technique as known and add it to the user's toolbox. "
+        "Call this when the user says they already know a technique. "
+        "The technique_key must be in the format 'category:techid' (e.g. 'submissions:kimura')."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "technique_key": {
+                "type": "string",
+                "description": "The technique key in format 'category:techid', e.g. 'submissions:kimura'.",
+            }
+        },
+        "required": ["technique_key"],
+    },
+}
+
 all_tools = [
     tool_get_notes,
     tool_get_goals,
@@ -150,6 +234,10 @@ all_tools = [
     tool_search_technique,
     tool_list_techniques,
     tool_save_note,
+    tool_set_focus,
+    tool_add_goal,
+    tool_add_schedule,
+    tool_add_to_toolbox,
 ]
 
 # Action-only tools: these actually do something or search.
@@ -158,6 +246,10 @@ action_tools = [
     tool_search_technique,
     tool_list_techniques,
     tool_save_note,
+    tool_set_focus,
+    tool_add_goal,
+    tool_add_schedule,
+    tool_add_to_toolbox,
 ]
 
 
@@ -281,7 +373,7 @@ def exec_search_technique(_chat_id, args):
         for tech_key, tech in category.get("items", {}).items():
             name = tech.get("name", "").lower()
             if query in name or query in tech_key:
-                matches.append(tech)
+                matches.append((category_key, tech_key, tech))
 
     if not matches:
         for category_key, category in all_techniques.items():
@@ -290,23 +382,28 @@ def exec_search_technique(_chat_id, args):
                 words = query.split()
                 for w in words:
                     if w in name or w in tech_key:
-                        matches.append(tech)
+                        matches.append((category_key, tech_key, tech))
                         break
 
     if not matches:
         return f"No technique found for '{query}'. Try a different name or use /technique to browse all.\nCOMMAND: /technique to browse all techniques"
 
     results = []
-    for tech in matches[:10]:
+    for cat_key, tech_key, tech in matches[:10]:
         name = tech.get("name", "")
         desc = tech.get("description", "")
         video = tech.get("video_url", "")
-        line = f"TECHNIQUE: {name}\nDESCRIPTION: {desc}"
+        key = f"{cat_key}:{tech_key}"
+        line = f"TECHNIQUE: {name}\nKEY: {key}\nDESCRIPTION: {desc}"
         if video:
             line += f"\nEXACT_VIDEO_URL: {video}"
         results.append(line)
 
-    results.append("COMMAND: /focus to set as focus technique, /toolbox to view known techniques")
+    results.append(
+        "To set as focus, call set_focus_technique with the KEY above. "
+        "To add to toolbox, call add_to_toolbox with the KEY above.\n"
+        "COMMAND: /focus to set as focus technique, /toolbox to view known techniques"
+    )
     return "\n---\n".join(results)
 
 
@@ -380,6 +477,195 @@ def exec_save_note(chat_id, args):
     return result
 
 
+def _find_technique_by_key(technique_key):
+    """Resolve 'category:techid' to (cat_id, tech_id, tech_data) or None."""
+    if ":" not in technique_key:
+        return None
+    parts = technique_key.split(":", 1)
+    cat_id = parts[0].strip()
+    tech_id = parts[1].strip()
+    cat = all_techniques.get(cat_id)
+    if not cat:
+        for k, v in all_techniques.items():
+            if cat_id in k or cat_id in v.get("name", "").lower():
+                cat = v
+                cat_id = k
+                break
+    if not cat:
+        return None
+    tech = cat.get("items", {}).get(tech_id)
+    if not tech:
+        for tk, tv in cat.get("items", {}).items():
+            if tech_id in tk or tech_id in tv.get("name", "").lower():
+                tech = tv
+                tech_id = tk
+                break
+    if not tech:
+        return None
+    return cat_id, tech_id, tech
+
+
+def _find_technique_by_name(query):
+    """Fuzzy search by name, return (cat_id, tech_id, tech_data) or None."""
+    query = query.lower().strip()
+    for cat_id, cat in all_techniques.items():
+        for tech_id, tech in cat.get("items", {}).items():
+            name = tech.get("name", "").lower()
+            if query in name or query in tech_id:
+                return cat_id, tech_id, tech
+    for cat_id, cat in all_techniques.items():
+        for tech_id, tech in cat.get("items", {}).items():
+            name = tech.get("name", "").lower()
+            for w in query.split():
+                if w in name or w in tech_id:
+                    return cat_id, tech_id, tech
+    return None
+
+
+def exec_set_focus(chat_id, args):
+    technique_key = args.get("technique_key", "").strip()
+    if not technique_key:
+        return "ERROR: no technique_key provided. Call search_technique first to find the key."
+
+    result = _find_technique_by_key(technique_key)
+    if not result:
+        result = _find_technique_by_name(technique_key)
+    if not result:
+        return f"ERROR: technique '{technique_key}' not found. Use search_technique to find the correct key.\nCOMMAND: /technique to browse all techniques"
+
+    cat_id, tech_id, tech = result
+
+    db = load_database(chat_id)
+    end_date = datetime.now() + timedelta(days=14)
+
+    db["active_drill"] = {
+        "technique": tech["name"],
+        "description": tech.get("description", ""),
+        "video_url": tech.get("video_url", ""),
+        "category": all_techniques[cat_id]["name"],
+        "toolbox_key": f"{cat_id}:{tech_id}",
+        "start_date": datetime.now().isoformat(),
+        "end_date": end_date.isoformat(),
+    }
+    save_database(chat_id, db)
+
+    video = tech.get("video_url", "")
+    result_text = f"Done! '{tech['name']}' is now your focus for 2 weeks."
+    if video:
+        result_text += f"\nEXACT_VIDEO_URL: {video}"
+    result_text += "\nCOMMAND: /focus to view your current focus"
+    return result_text
+
+
+def exec_add_goal(chat_id, args):
+    goal_text = args.get("goal_text", "").strip()
+    if not goal_text:
+        return "ERROR: empty goal."
+
+    word_count = len(goal_text.split())
+    if word_count > 7:
+        return f"ERROR: goal is {word_count} words, max 7. Ask the user to shorten it."
+    if word_count < 1:
+        return "ERROR: goal is empty."
+
+    db = load_database(chat_id)
+    active_count = 0
+    for g in db.get("goals", []):
+        if g.get("status", "active") == "active":
+            active_count += 1
+
+    if active_count >= 3:
+        return f"ERROR: user already has {active_count} active goals (max 3). They must complete or remove one first.\nCOMMAND: /goals to manage goals"
+
+    now = datetime.now()
+    year = now.isocalendar()[0]
+    week = now.isocalendar()[1]
+    week_str = f"{year}-W{week:02d}"
+
+    new_goal = {
+        "id": uuid.uuid4().hex[:8],
+        "week": week_str,
+        "goals": goal_text,
+        "status": "active",
+        "created_at": now.isoformat(),
+        "completed_at": None,
+        "refresh_schedule": [],
+        "refresh_index": 0,
+    }
+    db["goals"].append(new_goal)
+    save_database(chat_id, db)
+
+    return f"Goal saved: \"{goal_text}\" ({active_count + 1}/3 slots used).\nCOMMAND: /goals to manage goals"
+
+
+def exec_add_schedule(chat_id, args):
+    day = args.get("day", "").strip()
+    time_str = args.get("time", "").strip()
+
+    valid_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+    matched_day = None
+    for d in valid_days:
+        if day.lower() == d.lower() or day.lower()[:3] == d.lower()[:3]:
+            matched_day = d
+            break
+    if not matched_day:
+        return f"ERROR: invalid day '{day}'. Must be one of: {', '.join(valid_days)}."
+
+    if not time_str or len(time_str) < 4:
+        return "ERROR: invalid time. Use HH:MM format (e.g. '18:30')."
+
+    if ":" not in time_str:
+        return "ERROR: invalid time format. Use HH:MM (e.g. '18:30')."
+
+    db = load_database(chat_id)
+    for entry in db.get("schedule", []):
+        if entry["day"] == matched_day and entry["time"] == time_str:
+            return f"'{matched_day}' at {time_str} is already on the schedule.\nCOMMAND: /schedule to view schedule"
+
+    db["schedule"].append({
+        "day": matched_day,
+        "time": time_str,
+        "added_at": datetime.now().isoformat(),
+    })
+    save_database(chat_id, db)
+
+    return f"Added {matched_day} at {time_str} to the schedule.\nCOMMAND: /schedule to view or change schedule"
+
+
+def exec_add_to_toolbox(chat_id, args):
+    technique_key = args.get("technique_key", "").strip()
+    if not technique_key:
+        return "ERROR: no technique_key provided. Call search_technique first."
+
+    result = _find_technique_by_key(technique_key)
+    if not result:
+        result = _find_technique_by_name(technique_key)
+    if not result:
+        return f"ERROR: technique '{technique_key}' not found.\nCOMMAND: /technique to browse all techniques"
+
+    cat_id, tech_id, tech = result
+    key = f"{cat_id}:{tech_id}"
+
+    db = load_database(chat_id)
+    toolbox = db.get("toolbox", [])
+
+    for entry in toolbox:
+        if entry["key"] == key:
+            return f"'{tech['name']}' is already in the toolbox.\nCOMMAND: /toolbox to view known techniques"
+
+    toolbox.append({
+        "key": key,
+        "name": tech["name"],
+        "category": all_techniques[cat_id]["name"],
+        "added_at": datetime.now().isoformat(),
+    })
+    db["toolbox"] = toolbox
+    save_database(chat_id, db)
+
+    return f"'{tech['name']}' added to the toolbox.\nCOMMAND: /toolbox to view known techniques"
+
+
 tool_executors = {
     "get_training_notes": exec_get_notes,
     "get_goals": exec_get_goals,
@@ -389,4 +675,8 @@ tool_executors = {
     "search_technique": exec_search_technique,
     "list_techniques": exec_list_techniques,
     "save_training_note": exec_save_note,
+    "set_focus_technique": exec_set_focus,
+    "add_goal": exec_add_goal,
+    "add_schedule_entry": exec_add_schedule,
+    "add_to_toolbox": exec_add_to_toolbox,
 }

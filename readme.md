@@ -118,7 +118,8 @@ these commands give you quick access to training advice:
 
 ```
 TELEGRAM_BOT_TOKEN=your token here
-CHAT_ID=your chat id
+GEMINI_API_KEY=your gemini api key here
+MONTHLY_AI_LIMIT=10000
 ```
 
 3. install dependencies: `pip install -r requirements.txt`
