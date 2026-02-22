@@ -8,37 +8,51 @@ from .helpers import get_current_week
 
 state_goal_setting = 1
 
-MAX_ACTIVE_GOALS = 3
-
-# spaced repetition intervals (in days): 1 month, 2 months, 3 months, 6 months
-REFRESH_INTERVALS = [30, 60, 90, 180]
+max_active_goals = 3
+refresh_intervals = [30, 60, 90, 180]
 
 
-def _count_active_goals(database: dict) -> int:
-    return sum(1 for g in database.get("goals", []) if g.get("status", "active") == "active")
+def count_active_goals(database):
+    count = 0
+    for g in database.get("goals", []):
+        if g.get("status", "active") == "active":
+            count += 1
+    return count
+
+
+def find_goal(goals, goal_id):
+    for g in goals:
+        if g.get("id") == goal_id:
+            return g
+    return None
 
 
 async def goal_start_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     database = load_database(chat_id)
-    active_count = _count_active_goals(database)
+    active_count = count_active_goals(database)
 
-    if active_count >= MAX_ACTIVE_GOALS:
+    if active_count >= max_active_goals:
         await update.message.reply_text(
-            f"you already have *{active_count}* active goals (max {MAX_ACTIVE_GOALS}).\n\n"
+            f"you already have *{active_count}* active goals (max {max_active_goals}).\n\n"
             "complete or remove one first with /goals before adding a new one.",
             parse_mode="Markdown",
         )
         return ConversationHandler.END
 
     week = get_current_week()
-    remaining = MAX_ACTIVE_GOALS - active_count
+    remaining = max_active_goals - active_count
     prompt_message = (
-        f"*goal for {week}*  ({active_count}/{MAX_ACTIVE_GOALS} slots used)\n\n"
+        f"*goal for {week}*  ({active_count}/{max_active_goals} slots used)\n\n"
         "examples:\n"
-        "• _keep elbows tight_\n"
-        "• _hit 3 hip escapes per roll_\n"
-        "• _survive side control 30s_\n\n"
+        "• _keep elbows tight during rolls_\n"
+        "• _practice being relaxed during training_\n"
+        "• _be more attentive during demonstrations_\n"
+        "• _survive side control for 30 seconds_\n"
+        "• _attempt one sweep per roll_\n"
+        "• _focus on breathing under pressure_\n"
+        "• _ask coach one question per class_\n\n"
+        "_keep it short: 1 to 7 words_\n\n"
         "/cancel to abort"
     )
     await update.message.reply_text(prompt_message, parse_mode="Markdown")
@@ -49,32 +63,42 @@ async def goal_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     database = load_database(chat_id)
 
-    # double-check limit in case something changed
-    if _count_active_goals(database) >= MAX_ACTIVE_GOALS:
+    if count_active_goals(database) >= max_active_goals:
         await update.message.reply_text(
-            f"you already have {MAX_ACTIVE_GOALS} active goals. complete or remove one first with /goals.",
+            f"you already have {max_active_goals} active goals. complete or remove one first with /goals.",
         )
         return ConversationHandler.END
 
     week = get_current_week()
     goal_text = update.message.text.strip()
 
+    word_count = len(goal_text.split())
+    if word_count < 1:
+        await update.message.reply_text("goal can't be empty. write at least 1 word.")
+        return state_goal_setting
+    if word_count > 7:
+        await update.message.reply_text(
+            f"that's {word_count} words. keep it to 7 or fewer.\n"
+            "try again or /cancel to abort."
+        )
+        return state_goal_setting
+
     new_goal = {
         "id": uuid.uuid4().hex[:8],
         "week": week,
         "goals": goal_text,
-        "status": "active",            # active | completed | removed
+        "status": "active",
         "created_at": datetime.now().isoformat(),
         "completed_at": None,
-        "refresh_schedule": [],         # list of ISO dates for spaced reminders
-        "refresh_index": 0,            # which interval we're on
+        "refresh_schedule": [],
+        "refresh_index": 0,
     }
 
     database["goals"].append(new_goal)
     save_database(chat_id, database)
 
-    active_count = _count_active_goals(database)
-    confirmation_message = f"goal saved for {week}:\n\n_{goal_text}_\n\n({active_count}/{MAX_ACTIVE_GOALS} goal slots used)"
+    active_count = count_active_goals(database)
+    confirmation_message = f"goal saved for {week}:\n\n_{goal_text}_\n\n({active_count}/{max_active_goals} goal slots used)"
     await update.message.reply_text(confirmation_message, parse_mode="Markdown")
     return ConversationHandler.END
 
@@ -88,8 +112,13 @@ async def goals_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("no goals yet. use /goal!")
         return
 
-    active_goals = [g for g in goals if g.get("status", "active") == "active"]
-    completed_goals = [g for g in goals if g.get("status") == "completed"]
+    active_goals = []
+    completed_goals = []
+    for g in goals:
+        if g.get("status", "active") == "active":
+            active_goals.append(g)
+        elif g.get("status") == "completed":
+            completed_goals.append(g)
 
     message = "*goals*\n\n"
 
@@ -112,14 +141,16 @@ async def goals_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not active_goals and not completed_goals:
         message += "all goals removed. use /goal to set a new one!\n"
 
-    # build inline buttons for each active goal
     keyboard = []
     for goal in active_goals:
         gid = goal.get("id", "")
         if not gid:
             continue
+        short = goal["goals"]
+        if len(short) > 25:
+            short = short[:25] + "…"
         keyboard.append([
-            InlineKeyboardButton(f"✓ {_short(goal['goals'])}", callback_data=f"goal_done_{gid}"),
+            InlineKeyboardButton(f"✓ {short}", callback_data=f"goal_done_{gid}"),
             InlineKeyboardButton("✕", callback_data=f"goal_rm_{gid}"),
         ])
 
@@ -132,7 +163,6 @@ async def goals_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle complete / remove / refresh-acknowledge buttons."""
     query = update.callback_query
     await query.answer()
     data = query.data
@@ -143,7 +173,7 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if data.startswith("goal_done_"):
         goal_id = data[len("goal_done_"):]
-        goal = _find_goal(goals, goal_id)
+        goal = find_goal(goals, goal_id)
         if not goal:
             await query.edit_message_text("goal not found.")
             return
@@ -151,30 +181,33 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         goal["status"] = "completed"
         goal["completed_at"] = datetime.now().isoformat()
 
-        # schedule spaced repetition reminders
         goal["refresh_schedule"] = []
         goal["refresh_index"] = 0
-        for days in REFRESH_INTERVALS:
+        for days in refresh_intervals:
             remind_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
             goal["refresh_schedule"].append(remind_date)
 
         save_database(chat_id, database)
 
-        next_refresh = goal["refresh_schedule"][0]
+        date_1m = (datetime.now() + timedelta(days=refresh_intervals[0])).strftime("%b %d")
+        date_2m = (datetime.now() + timedelta(days=refresh_intervals[1])).strftime("%b %d")
+        date_3m = (datetime.now() + timedelta(days=refresh_intervals[2])).strftime("%b %d")
+        date_6m = (datetime.now() + timedelta(days=refresh_intervals[3])).strftime("%b %d")
+
         await query.edit_message_text(
             f"✓ *{goal['goals']}* completed!\n\n"
             f"refresh reminders scheduled:\n"
-            f"  • 1 month  ({_format_date(REFRESH_INTERVALS[0])})\n"
-            f"  • 2 months ({_format_date(REFRESH_INTERVALS[1])})\n"
-            f"  • 3 months ({_format_date(REFRESH_INTERVALS[2])})\n"
-            f"  • 6 months ({_format_date(REFRESH_INTERVALS[3])})\n\n"
+            f"  • 1 month  ({date_1m})\n"
+            f"  • 2 months ({date_2m})\n"
+            f"  • 3 months ({date_3m})\n"
+            f"  • 6 months ({date_6m})\n\n"
             f"_you'll get a reminder to refresh this skill_",
             parse_mode="Markdown",
         )
 
     elif data.startswith("goal_rm_"):
         goal_id = data[len("goal_rm_"):]
-        goal = _find_goal(goals, goal_id)
+        goal = find_goal(goals, goal_id)
         if not goal:
             await query.edit_message_text("goal not found.")
             return
@@ -185,14 +218,12 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.edit_message_text(f"removed: _{goal['goals']}_", parse_mode="Markdown")
 
     elif data.startswith("goal_refresh_"):
-        # user acknowledged a refresh reminder
         goal_id = data[len("goal_refresh_"):]
-        goal = _find_goal(goals, goal_id)
+        goal = find_goal(goals, goal_id)
         if not goal:
             await query.edit_message_text("goal not found.")
             return
 
-        # advance to next interval
         goal["refresh_index"] = goal.get("refresh_index", 0) + 1
         save_database(chat_id, database)
 
@@ -208,19 +239,3 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 f"*{goal['goals']}* fully locked in! all refreshes done 🏆",
                 parse_mode="Markdown",
             )
-
-
-def _find_goal(goals: list, goal_id: str):
-    for g in goals:
-        if g.get("id") == goal_id:
-            return g
-    return None
-
-
-def _short(text: str, limit: int = 25) -> str:
-    """Shorten text for button labels."""
-    return text[:limit] + "…" if len(text) > limit else text
-
-
-def _format_date(days_from_now: int) -> str:
-    return (datetime.now() + timedelta(days=days_from_now)).strftime("%b %d")

@@ -1,27 +1,32 @@
 from datetime import datetime, time, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
 from .reminders import schedule_pretraining_jobs
 
-state_schedule_day = 10
-state_schedule_time = 11
-
-DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-# python weekday(): Monday=0 … Sunday=6
-DAY_TO_NUM = {d: i for i, d in enumerate(DAYS_OF_WEEK)}
+days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+day_to_num = {
+    "Monday": 0,
+    "Tuesday": 1,
+    "Wednesday": 2,
+    "Thursday": 3,
+    "Friday": 4,
+    "Saturday": 5,
+    "Sunday": 6,
+}
 
 
 async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show current schedule and offer to add/clear."""
     chat_id = update.effective_chat.id
     db = load_database(chat_id)
     schedule = db.get("schedule", [])
 
     message = "*your bjj schedule*\n\n"
 
-    sorted_schedule = sorted(schedule, key=lambda e: (DAY_TO_NUM.get(e["day"], 7), e["time"])) if schedule else []
+    sorted_schedule = []
+    if schedule:
+        sorted_schedule = sorted(schedule, key=lambda e: (day_to_num.get(e["day"], 7), e["time"]))
 
     if sorted_schedule:
         for entry in sorted_schedule:
@@ -34,13 +39,12 @@ async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = []
     row = []
-    for i, day in enumerate(DAYS_OF_WEEK):
+    for i, day in enumerate(days_of_week):
         row.append(InlineKeyboardButton(day[:3], callback_data=f"sched_day_{day}"))
-        if len(row) == 4 or i == len(DAYS_OF_WEEK) - 1:
+        if len(row) == 4 or i == len(days_of_week) - 1:
             keyboard.append(row)
             row = []
 
-    # show remove buttons for each existing entry
     if sorted_schedule:
         for entry in sorted_schedule:
             idx = schedule.index(entry)
@@ -55,19 +59,17 @@ async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle schedule-related inline buttons."""
     query = update.callback_query
     await query.answer()
     data = query.data
 
     if data.startswith("sched_day_"):
         day = data[len("sched_day_"):]
-        if day not in DAYS_OF_WEEK:
+        if day not in days_of_week:
             return
 
         context.user_data["sched_pending_day"] = day
 
-        # offer common class times (full and half hours)
         keyboard = []
         common_hours = [6, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 21]
         common_times = []
@@ -101,7 +103,6 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = query.message.chat_id
         db = load_database(chat_id)
 
-        # avoid duplicates
         for entry in db["schedule"]:
             if entry["day"] == day and entry["time"] == time_str:
                 await query.edit_message_text(
@@ -117,7 +118,6 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         })
         save_database(chat_id, db)
 
-        # reschedule pre-training reminder jobs
         schedule_pretraining_jobs(context.application.job_queue, chat_id)
 
         await query.edit_message_text(
@@ -128,7 +128,6 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data.startswith("sched_rm_"):
-        # remove a single entry
         idx_str = data[len("sched_rm_"):]
         try:
             idx = int(idx_str)

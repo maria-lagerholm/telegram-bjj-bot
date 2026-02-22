@@ -1,4 +1,4 @@
-TECHNIQUES = {
+techniques = {
     "escapes": {
         "name": "escapes",
         "items": {
@@ -50,19 +50,19 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/s_8-qH45K2c",
                 "block": 4,
             },
-            "mountescape-leg": {
+            "mountescape": {
                 "name": "mount escape (leg lift variation)",
                 "description": "from bottom mount, trap one of your opponent's legs by lifting it with your foot. bridge and use the trapped leg to create space and escape to half guard or full guard.",
                 "video_url": "https://youtu.be/b1kyiWdb7Ms",
                 "block": 4,
             },
-            "armbar-escape": {
+            "armbarescape": {
                 "name": "armbar escape",
                 "description": "when caught in an armbar, stack into your opponent and clasp your hands together. posture up, turn your thumb toward the ceiling, and pull your arm free while working to pass guard.",
                 "video_url": "https://youtu.be/V7rqPbp996U",
                 "block": 3,
             },
-            "triangle-escape": {
+            "triangleescape": {
                 "name": "triangle escape",
                 "description": "when caught in a triangle choke, posture up immediately. stack your opponent, work your trapped arm across their body, and drive through to pass guard or create space to pull your head free.",
                 "video_url": "https://youtu.be/zkHASbwi2vo",
@@ -97,13 +97,13 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/Uj3-mVLRF-k",
                 "block": 1,
             },
-            "americana-mount": {
+            "americanamount": {
                 "name": "americana (from mount)",
                 "description": "from mount, pin your opponent's wrist to the mat. slide your other hand under their arm and grab your own wrist to form a figure-four. keep their elbow pinned and rotate their hand toward their hip to finish.",
                 "video_url": "https://youtu.be/Ebpi_Rniglc",
                 "block": 1,
             },
-            "armbar-guard": {
+            "armbarguard": {
                 "name": "armbar (from closed guard)",
                 "description": "from closed guard, control their arm and break their posture. place your foot on their hip, swing your leg over their head, pinch your knees, and extend your hips into their elbow to finish.",
                 "video_url": "https://youtu.be/cIOb_A1XD6M",
@@ -121,25 +121,25 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/tVJpb6zRXxo",
                 "block": 2,
             },
-            "americana-side": {
+            "americana": {
                 "name": "americana",
                 "description": "from mount or side control, pin your opponent's wrist to the mat. form a figure-four grip by sliding your hand under their arm and grabbing your own wrist. paint their hand toward their hip to finish.",
                 "video_url": "https://youtu.be/kyxyTTulDcI",
                 "block": 2,
             },
-            "armbar-b2": {
+            "armbardetails": {
                 "name": "armbar (details)",
                 "description": "detailed armbar mechanics from guard. control the arm, pivot your hips, swing your leg over their head, pinch your knees tight, and raise your hips to hyperextend the elbow.",
                 "video_url": "https://youtu.be/QieI2wE3FTE",
                 "block": 2,
             },
-            "crosschoke-mount": {
+            "crosschokemount": {
                 "name": "cross choke",
                 "description": "reach deep into their collar with your first hand (palm up). use your second hand to grab the other collar underneath your first arm. pull them in and expand your chest while bringing your elbows to your ribs to finish.",
                 "video_url": "https://youtu.be/2M1o6SpqGFM",
                 "block": 2,
             },
-            "armbar-back": {
+            "armbarback": {
                 "name": "armbar from back",
                 "description": "from back control, when they defend the choke, transition to an armbar. rotate your body, swing your leg over their head, pinch your knees, and extend their arm to finish.",
                 "video_url": "https://youtu.be/GSOFynoQZK4",
@@ -151,13 +151,13 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/AFZldfpsG1c",
                 "block": 2,
             },
-            "crosschoke-guard": {
+            "crosschokeguard": {
                 "name": "cross choke from guard",
                 "description": "from closed guard, reach deep into their collar with your first hand palm up. open their other lapel and reach underneath to grab it. pull them in with your legs and expand your chest to finish.",
                 "video_url": "https://youtu.be/nxjuVWe6cMo",
                 "block": 3,
             },
-            "armbar-kob": {
+            "armbarknee": {
                 "name": "armbar from knee on belly",
                 "description": "from knee on belly, bait your opponent to push on your knee. capture their arm, step over their head, and drop back for the armbar. pinch your knees and extend your hips to finish.",
                 "video_url": "https://youtu.be/-m7hRFc4uoc",
@@ -269,7 +269,7 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/MO-2YLFOuHo",
                 "block": 2,
             },
-            "guardbreak-stand": {
+            "guardbreakstand": {
                 "name": "standing guard break (variation)",
                 "description": "from inside closed guard, posture up and establish grips. stand up one leg at a time, keeping your base wide. use your hands to break their ankle lock and open the guard for passing.",
                 "video_url": "https://youtu.be/G3nJ6C3vTaE",
@@ -316,7 +316,7 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/LSaPuunSp68",
                 "block": 4,
             },
-            "clinch-hookleg": {
+            "clinchhookleg": {
                 "name": "safe clinch + hook the leg",
                 "description": "from the safe clinch, hook your opponent's lead leg with your foot while pulling them off balance. trip them to the ground and follow into a dominant top position.",
                 "video_url": "https://youtu.be/rnCoJGTRugM",
@@ -339,7 +339,7 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/d1K7j8G1N60",
                 "block": 2,
             },
-            "hooks-back": {
+            "hooksback": {
                 "name": "hooks from back (back control)",
                 "description": "from behind your opponent, establish seatbelt grip and insert both hooks inside their thighs. keep your chest glued to their back and control their posture to set up chokes and armlocks.",
                 "video_url": "https://youtu.be/CSsoatMc9UM",
@@ -350,31 +350,31 @@ TECHNIQUES = {
     "ukemi": {
         "name": "breakfalls & ukemi",
         "items": {
-            "forward-roll": {
+            "forwardroll": {
                 "name": "forward roll to standing (mae mawari ukemi)",
                 "description": "tuck your chin, reach forward with one arm, and roll diagonally across your back from shoulder to opposite hip. come up to standing in a fighting stance. essential for safe falling during throws.",
                 "video_url": "https://youtu.be/HnN0-ugVlEA",
                 "block": 4,
             },
-            "backward-roll": {
+            "backwardroll": {
                 "name": "backward roll to standing",
                 "description": "sit down, tuck your chin to your chest, roll backward over one shoulder, and come up to standing. keep your body compact throughout the roll.",
                 "video_url": "https://youtu.be/pKc3P9DmpzY",
                 "block": 4,
             },
-            "forward-breakfall": {
+            "forwardbreakfall": {
                 "name": "forward breakfall (mae mawari ukemi, dampened)",
                 "description": "roll forward diagonally across your back, but instead of standing up, slap the mat with your arm and leg to absorb the impact. used when thrown forward.",
                 "video_url": "https://youtu.be/HGb8hdWdOYA",
                 "block": 4,
             },
-            "backward-breakfall": {
+            "backwardbreakfall": {
                 "name": "backward breakfall (ushiro ukemi)",
                 "description": "tuck your chin, sit down and roll onto your back. slap both arms on the mat at 45 degrees to absorb impact. keep your head off the mat throughout. used when thrown backward.",
                 "video_url": "https://youtu.be/UDMKF-OMb08",
                 "block": 4,
             },
-            "side-breakfall": {
+            "sidebreakfall": {
                 "name": "side breakfall (yoko ukemi)",
                 "description": "fall to one side, slap the mat with your arm at 45 degrees to absorb impact. keep your head off the mat and your top leg raised. used when thrown sideways.",
                 "video_url": "https://youtu.be/KIruu0kjvBM",
@@ -403,13 +403,13 @@ TECHNIQUES = {
                 "video_url": "https://youtu.be/2DxU2Tp6wOk",
                 "block": 4,
             },
-            "punchblock-long": {
+            "punchblocklong": {
                 "name": "punch block (long distance + upkick)",
                 "description": "from your back at long range, use your feet and legs to manage distance. frame with your feet on their hips, and use upkicks to keep a striking opponent at bay while working to recover guard.",
                 "video_url": "https://youtu.be/xioKfFBkTGc",
                 "block": 4,
             },
-            "punchblock-close": {
+            "punchblockclose": {
                 "name": "punch block (closed guard)",
                 "description": "from closed guard against a striking opponent, break their posture by pulling them in tight. control their head and arms to neutralize strikes, then work for sweeps or submissions.",
                 "video_url": "https://youtu.be/B922x8D2tis",

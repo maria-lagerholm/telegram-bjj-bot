@@ -40,32 +40,30 @@ async def send_weekly_goal_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     database = load_database(chat_id)
     week = get_current_week()
-    
-    active_goals = [
-        g for g in database["goals"]
-        if g.get("status", "active") == "active"
-    ]
-    
+
+    active_goals = []
+    for g in database["goals"]:
+        if g.get("status", "active") == "active":
+            active_goals.append(g)
+
     if active_goals:
         message = f"*week {week}*\n\nyour active goals:\n\n"
         for goal in active_goals:
             message += f"  • {goal['goals']}\n"
     else:
         message = f"*new week ({week})*\n\nset a goal with /goal!"
-    
+
     await context.bot.send_message(
         chat_id=chat_id,
         text=message,
-        parse_mode="Markdown"
+        parse_mode="Markdown",
     )
 
 
 async def send_daily_checkin(context: ContextTypes.DEFAULT_TYPE):
-    """Ask the user if they trained today."""
     chat_id = context.job.chat_id
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # don't ask twice on the same day
     database = load_database(chat_id)
     for entry in database.get("training_log", []):
         if entry["date"] == today:
@@ -86,10 +84,7 @@ async def send_daily_checkin(context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def checkin_callback(context_or_update, context=None):
-    """Handle yes/no response to the daily check-in."""
-    # this is called as a CallbackQueryHandler, so first arg is Update
-    update = context_or_update
+async def checkin_callback(update, context):
     query = update.callback_query
     await query.answer()
 
@@ -100,10 +95,12 @@ async def checkin_callback(context_or_update, context=None):
     chat_id = query.message.chat_id
     database = load_database(chat_id)
 
-    # prevent duplicate entries for the same day
     for entry in database.get("training_log", []):
         if entry["date"] == today:
-            status = "trained" if entry["trained"] else "rest day"
+            if entry["trained"]:
+                status = "trained"
+            else:
+                status = "rest day"
             await query.edit_message_text(f"already logged today as *{status}*.", parse_mode="Markdown")
             return
 
@@ -116,9 +113,8 @@ async def checkin_callback(context_or_update, context=None):
     save_database(chat_id, database)
 
     if trained:
-        # count current streak
-        streak = _get_current_streak(database["training_log"])
-        msg = f"nice! logged as a training day."
+        streak = get_current_streak(database["training_log"])
+        msg = "nice! logged as a training day."
         if streak > 1:
             msg += f"\n🔥 {streak}-day streak!"
         msg += "\n\nuse /note to log what you learned."
@@ -128,12 +124,13 @@ async def checkin_callback(context_or_update, context=None):
     await query.edit_message_text(msg)
 
 
-def _get_current_streak(training_log: list) -> int:
-    """Count consecutive training days ending today."""
-    trained_dates = sorted(
-        [e["date"] for e in training_log if e["trained"]],
-        reverse=True,
-    )
+def get_current_streak(training_log):
+    trained_dates = []
+    for entry in training_log:
+        if entry["trained"]:
+            trained_dates.append(entry["date"])
+    trained_dates.sort(reverse=True)
+
     if not trained_dates:
         return 0
 
@@ -150,7 +147,6 @@ def _get_current_streak(training_log: list) -> int:
 
 
 async def send_refresh_reminders(context: ContextTypes.DEFAULT_TYPE):
-    """Check for completed goals that are due for a spaced repetition refresh."""
     chat_id = context.job.chat_id
     database = load_database(chat_id)
     today = datetime.now().strftime("%Y-%m-%d")
@@ -163,11 +159,14 @@ async def send_refresh_reminders(context: ContextTypes.DEFAULT_TYPE):
         idx = goal.get("refresh_index", 0)
 
         if idx >= len(schedule):
-            continue  # all refreshes done
+            continue
 
         if schedule[idx] <= today:
             interval_label = ["1 month", "2 months", "3 months", "6 months"]
-            label = interval_label[idx] if idx < len(interval_label) else f"reminder {idx + 1}"
+            if idx < len(interval_label):
+                label = interval_label[idx]
+            else:
+                label = f"reminder {idx + 1}"
 
             keyboard = [[
                 InlineKeyboardButton(
@@ -191,24 +190,21 @@ async def send_refresh_reminders(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
-    """1 hour before a scheduled class: send last session notes + active goals."""
     chat_id = context.job.chat_id
     database = load_database(chat_id)
 
-    # --- last session note ---
     notes = database.get("notes", [])
-    last_note = notes[-1] if notes else None
+    last_note = None
+    if notes:
+        last_note = notes[-1]
 
-    # --- active goals (max 3) ---
-    active_goals = [
-        g for g in database.get("goals", [])
-        if g.get("status", "active") == "active"
-    ]
+    active_goals = []
+    for g in database.get("goals", []):
+        if g.get("status", "active") == "active":
+            active_goals.append(g)
 
-    # --- active drill ---
     active_drill = database.get("active_drill")
 
-    # build message
     message = "*pre-training recap* 🥋\n\n"
 
     if active_goals:
@@ -233,7 +229,11 @@ async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
     if not active_goals and not last_note and not active_drill:
         message += "no notes or goals yet, focus on learning today!\n"
 
-    message += "_have a great session! use /note afterwards to log what you learned._"
+    message += (
+        "_have a great session!_\n\n"
+        "remember to take a note after training - use /note to log what you learned. "
+        "pay attention during demonstrations so you can write it down later!"
+    )
 
     await context.bot.send_message(
         chat_id=chat_id,
@@ -242,12 +242,15 @@ async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-def schedule_pretraining_jobs(job_queue, chat_id: int):
-    """(Re)schedule pre-training recap jobs based on the user's saved schedule.
+def parse_time(time_str, default_h, default_m):
+    try:
+        parts = time_str.split(":")
+        return time(hour=int(parts[0]), minute=int(parts[1]))
+    except (ValueError, IndexError, AttributeError):
+        return time(hour=default_h, minute=default_m)
 
-    Call this on /start and whenever the schedule changes.
-    """
-    # clear any existing pre-training jobs for this chat
+
+def schedule_pretraining_jobs(job_queue, chat_id):
     prefix = f"pretrain_{chat_id}_"
     for job in job_queue.jobs():
         if job.name and job.name.startswith(prefix):
@@ -257,13 +260,18 @@ def schedule_pretraining_jobs(job_queue, chat_id: int):
     schedule = database.get("schedule", [])
 
     day_map = {
-        "Monday": 0, "Tuesday": 1, "Wednesday": 2,
-        "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6,
+        "Monday": 0,
+        "Tuesday": 1,
+        "Wednesday": 2,
+        "Thursday": 3,
+        "Friday": 4,
+        "Saturday": 5,
+        "Sunday": 6,
     }
 
     for entry in schedule:
         day_name = entry["day"]
-        time_str = entry["time"]  # e.g. "18:00"
+        time_str = entry["time"]
 
         day_num = day_map.get(day_name)
         if day_num is None:
@@ -272,11 +280,13 @@ def schedule_pretraining_jobs(job_queue, chat_id: int):
         try:
             parts = time_str.split(":")
             hour = int(parts[0])
-            minute = int(parts[1]) if len(parts) > 1 else 0
+            if len(parts) > 1:
+                minute = int(parts[1])
+            else:
+                minute = 0
         except (ValueError, IndexError):
             continue
 
-        # 1 hour before class
         reminder_dt = datetime.combine(datetime.today(), time(hour=hour, minute=minute)) - timedelta(hours=1)
         remind_hour = reminder_dt.hour
         remind_minute = reminder_dt.minute
@@ -292,60 +302,64 @@ def schedule_pretraining_jobs(job_queue, chat_id: int):
         )
 
 
-async def setup_reminders(update, context):
-    chat_id = update.effective_chat.id
-    job_queue = context.application.job_queue
-    
-    focus_reminder_name = f"focus_reminder_{chat_id}"
-    existing_focus_jobs = job_queue.get_jobs_by_name(focus_reminder_name)
-    for job in existing_focus_jobs:
+def schedule_all_reminders(chat_id, job_queue):
+    database = load_database(chat_id)
+    rt = database.get("reminder_times", {})
+
+    checkin_time = parse_time(rt.get("daily_checkin", "20:00"), 20, 0)
+    focus_time = parse_time(rt.get("focus_reminder", "09:00"), 9, 0)
+    goal_time = parse_time(rt.get("goal_reminder", "08:00"), 8, 0)
+    refresh_time = parse_time(rt.get("refresh_reminder", "10:00"), 10, 0)
+
+    focus_name = f"focus_reminder_{chat_id}"
+    for job in job_queue.get_jobs_by_name(focus_name):
         job.schedule_removal()
-    
-    goal_reminder_name = f"goal_reminder_{chat_id}"
-    existing_goal_jobs = job_queue.get_jobs_by_name(goal_reminder_name)
-    for job in existing_goal_jobs:
+
+    goal_name = f"goal_reminder_{chat_id}"
+    for job in job_queue.get_jobs_by_name(goal_name):
         job.schedule_removal()
 
     checkin_name = f"checkin_{chat_id}"
-    existing_checkin_jobs = job_queue.get_jobs_by_name(checkin_name)
-    for job in existing_checkin_jobs:
+    for job in job_queue.get_jobs_by_name(checkin_name):
         job.schedule_removal()
-    
+
+    refresh_name = f"refresh_{chat_id}"
+    for job in job_queue.get_jobs_by_name(refresh_name):
+        job.schedule_removal()
+
     job_queue.run_daily(
         send_daily_focus_reminder,
-        time=time(hour=9, minute=0),
+        time=focus_time,
         chat_id=chat_id,
-        name=focus_reminder_name,
-    )
-    
-    job_queue.run_daily(
-        send_weekly_goal_reminder,
-        time=time(hour=8, minute=0),
-        days=(0,),
-        chat_id=chat_id,
-        name=goal_reminder_name,
+        name=focus_name,
     )
 
-    # daily check-in at 20:00 (evening, did you train today?)
+    job_queue.run_daily(
+        send_weekly_goal_reminder,
+        time=goal_time,
+        days=(0,),
+        chat_id=chat_id,
+        name=goal_name,
+    )
+
     job_queue.run_daily(
         send_daily_checkin,
-        time=time(hour=20, minute=0),
+        time=checkin_time,
         chat_id=chat_id,
         name=checkin_name,
     )
 
-    # spaced repetition refresh check at 10:00 daily
-    refresh_name = f"refresh_{chat_id}"
-    existing_refresh_jobs = job_queue.get_jobs_by_name(refresh_name)
-    for job in existing_refresh_jobs:
-        job.schedule_removal()
-
     job_queue.run_daily(
         send_refresh_reminders,
-        time=time(hour=10, minute=0),
+        time=refresh_time,
         chat_id=chat_id,
         name=refresh_name,
     )
 
-    # schedule pre-training recaps based on user's BJJ schedule
     schedule_pretraining_jobs(job_queue, chat_id)
+
+
+async def setup_reminders(update, context):
+    chat_id = update.effective_chat.id
+    job_queue = context.application.job_queue
+    schedule_all_reminders(chat_id, job_queue)

@@ -32,12 +32,12 @@ def find_techniques_in_text(text):
         "seatbelt", "underhook", "overhook", "frames",
         "collar grip", "sleeve grip",
     ]
-    
+
     text_lowercase = text.lower()
     found_techniques = []
-    
+
     for technique in known_techniques:
         if technique in text_lowercase:
             found_techniques.append(technique.title())
-    
+
     return found_techniques

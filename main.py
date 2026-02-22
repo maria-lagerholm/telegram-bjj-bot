@@ -11,20 +11,26 @@ from telegram.ext import (
     filters,
 )
 
-from modules.commands_basic import (
+from modules.commands_basic import cancel_command
+from modules.commands_menu import (
     start_command,
     help_command,
+    menu_callback,
+    menucmd_callback,
+)
+from modules.commands_info import (
     mindset_command,
     habits_command,
-    technique_command,
-    technique_callback,
-    toolbox_command,
     etiquette_command,
     dos_command,
     donts_command,
     scoring_command,
     illegal_command,
-    cancel_command,
+)
+from modules.commands_techniques import (
+    technique_command,
+    technique_callback,
+    toolbox_command,
 )
 from modules.commands_goals import (
     goal_start_conversation,
@@ -38,6 +44,7 @@ from modules.commands_notes import (
     note_receive_text,
     note_goal_callback,
     notes_list_command,
+    notes_page_callback,
     state_note_writing,
 )
 from modules.commands_drills import (
@@ -46,8 +53,17 @@ from modules.commands_drills import (
     stats_command,
 )
 from modules.commands_schedule import schedule_command, schedule_callback
-from modules.commands_export import export_command, export_callback
+from modules.commands_export import (
+    export_command,
+    export_callback,
+    import_start_command,
+    import_receive_file,
+    state_import_waiting,
+)
 from modules.reminders import setup_reminders, checkin_callback
+from modules.commands_reminders import reminders_command, reminder_time_callback
+from modules.app_map import render_app_map
+from modules.ai_chat import handle_chat_message
 
 load_dotenv()
 
@@ -55,45 +71,37 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
-logger = logging.getLogger(__name__)
+
+
+async def map_command(update, context):
+    img_buf = render_app_map()
+    await update.message.reply_photo(
+        photo=img_buf,
+        caption="here's how the bot is organized. tap /help to open the menu.",
+    )
 
 
 async def post_init(application):
-    """Register command suggestions with Telegram so they appear when typing /."""
     await application.bot.set_my_commands([
-        BotCommand("help", "all commands"),
+        BotCommand("help", "open menu"),
         BotCommand("note", "log a training session"),
-        BotCommand("notes", "view your notes"),
-        BotCommand("goal", "set a goal (max 3)"),
-        BotCommand("goals", "view your goals"),
+        BotCommand("goal", "set a goal"),
         BotCommand("focus", "current technique focus"),
-        BotCommand("technique", "browse technique library"),
-        BotCommand("toolbox", "techniques you know"),
+        BotCommand("technique", "browse techniques"),
         BotCommand("stats", "your progress"),
-        BotCommand("schedule", "set training days"),
-        BotCommand("export", "save your data"),
-        BotCommand("mindset", "mental approach"),
-        BotCommand("habits", "training consistency"),
-        BotCommand("etiquette", "mat conduct"),
-        BotCommand("dos", "what to focus on"),
-        BotCommand("donts", "what to avoid"),
-        BotCommand("scoring", "competition points"),
-        BotCommand("illegal", "banned moves"),
     ])
 
 
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
-    
+
     if not token or token == "your-token-here":
-        print("=" * 50)
-        print("ERROR: Set TELEGRAM_BOT_TOKEN in .env")
-        print("Get one from @BotFather on Telegram")
-        print("=" * 50)
+        print("set TELEGRAM_BOT_TOKEN in .env")
+        print("get one from @BotFather on Telegram")
         return
-    
+
     app = Application.builder().token(token).post_init(post_init).build()
-    
+
     goal_conversation = ConversationHandler(
         entry_points=[CommandHandler("goal", goal_start_conversation)],
         states={
@@ -103,7 +111,7 @@ def main():
         },
         fallbacks=[CommandHandler("cancel", cancel_command)],
     )
-    
+
     note_conversation = ConversationHandler(
         entry_points=[CommandHandler("note", note_start_conversation)],
         states={
@@ -113,7 +121,17 @@ def main():
         },
         fallbacks=[CommandHandler("cancel", cancel_command)],
     )
-    
+
+    import_conversation = ConversationHandler(
+        entry_points=[CommandHandler("import", import_start_command)],
+        states={
+            state_import_waiting: [
+                MessageHandler(filters.Document.ALL, import_receive_file)
+            ]
+        },
+        fallbacks=[CommandHandler("cancel", cancel_command)],
+    )
+
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("mindset", mindset_command))
@@ -127,7 +145,8 @@ def main():
     app.add_handler(CommandHandler("illegal", illegal_command))
     app.add_handler(goal_conversation)
     app.add_handler(note_conversation)
-    
+    app.add_handler(import_conversation)
+
     app.add_handler(CommandHandler("focus", focus_command))
     app.add_handler(CommandHandler("drill", focus_command))
     app.add_handler(CommandHandler("goals", goals_list_command))
@@ -136,15 +155,26 @@ def main():
     app.add_handler(CommandHandler("toolbox", toolbox_command))
     app.add_handler(CommandHandler("schedule", schedule_command))
     app.add_handler(CommandHandler("export", export_command))
-    
+    app.add_handler(CommandHandler("reminders", reminders_command))
+    app.add_handler(CommandHandler("map", map_command))
+
+    app.add_handler(CallbackQueryHandler(menu_callback, pattern="^menu_"))
+    app.add_handler(CallbackQueryHandler(menucmd_callback, pattern="^menucmd_"))
     app.add_handler(CallbackQueryHandler(goal_action_callback, pattern="^goal_"))
     app.add_handler(CallbackQueryHandler(checkin_callback, pattern="^checkin_"))
     app.add_handler(CallbackQueryHandler(note_goal_callback, pattern="^notegoal_"))
+    app.add_handler(CallbackQueryHandler(notes_page_callback, pattern="^notespage_"))
+    app.add_handler(CallbackQueryHandler(reminder_time_callback, pattern="^remtime_"))
     app.add_handler(CallbackQueryHandler(schedule_callback, pattern="^sched_"))
     app.add_handler(CallbackQueryHandler(export_callback, pattern="^export_"))
     app.add_handler(CallbackQueryHandler(focus_callback, pattern="^focus_"))
+
+    # ai chat: catch plain text or voice messages (must be last)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_chat_message))
+    app.add_handler(MessageHandler(filters.VOICE, handle_chat_message))
+
     app.add_handler(CommandHandler("start", setup_reminders), group=1)
-    
+
     print("BJJ Bot running! Ctrl+C to stop.")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
