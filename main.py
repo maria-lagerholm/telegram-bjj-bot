@@ -45,7 +45,11 @@ from modules.commands_notes import (
     note_goal_callback,
     notes_list_command,
     notes_page_callback,
+    journal_manage_command,
+    note_manage_callback,
+    note_edit_receive,
     state_note_writing,
+    state_note_editing,
 )
 from modules.commands_drills import (
     focus_command,
@@ -85,6 +89,7 @@ async def post_init(application):
     await application.bot.set_my_commands([
         BotCommand("note", "log a training note"),
         BotCommand("notes", "view my notes"),
+        BotCommand("journal", "edit or delete notes"),
         BotCommand("goal", "set a goal"),
         BotCommand("goals", "view my goals"),
         BotCommand("focus", "current technique focus"),
@@ -131,6 +136,18 @@ def main():
         conversation_timeout=120,
     )
 
+    note_edit_conversation = ConversationHandler(
+        entry_points=[CallbackQueryHandler(note_manage_callback, pattern="^noteedit_")],
+        states={
+            state_note_editing: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, note_edit_receive)
+            ],
+            ConversationHandler.TIMEOUT: [MessageHandler(filters.ALL, timeout_handler)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel_command), cmd_fallback],
+        conversation_timeout=120,
+    )
+
     import_conversation = ConversationHandler(
         entry_points=[CommandHandler("import", import_start_command)],
         states={
@@ -156,12 +173,14 @@ def main():
     app.add_handler(CommandHandler("illegal", illegal_command))
     app.add_handler(goal_conversation)
     app.add_handler(note_conversation)
+    app.add_handler(note_edit_conversation)
     app.add_handler(import_conversation)
 
     app.add_handler(CommandHandler("focus", focus_command))
     app.add_handler(CommandHandler("drill", focus_command))
     app.add_handler(CommandHandler("goals", goals_list_command))
     app.add_handler(CommandHandler("notes", notes_list_command))
+    app.add_handler(CommandHandler("journal", journal_manage_command))
     app.add_handler(CommandHandler("stats", stats_command))
     app.add_handler(CommandHandler("toolbox", toolbox_command))
     app.add_handler(CommandHandler("schedule", schedule_command))
@@ -175,6 +194,8 @@ def main():
     app.add_handler(CallbackQueryHandler(checkin_callback, pattern="^checkin_"))
     app.add_handler(CallbackQueryHandler(note_goal_callback, pattern="^notegoal_"))
     app.add_handler(CallbackQueryHandler(notes_page_callback, pattern="^notespage_"))
+    app.add_handler(CallbackQueryHandler(note_manage_callback, pattern="^notedel_"))
+    app.add_handler(CallbackQueryHandler(note_manage_callback, pattern="^notemanage_"))
     app.add_handler(CallbackQueryHandler(reminder_time_callback, pattern="^remtime_"))
     app.add_handler(CallbackQueryHandler(schedule_callback, pattern="^sched_"))
     app.add_handler(CallbackQueryHandler(export_callback, pattern="^export_"))

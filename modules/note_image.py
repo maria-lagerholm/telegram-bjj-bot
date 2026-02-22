@@ -21,36 +21,26 @@ RED_CLR = (210, 140, 140, 80)
 FONTS_DIR = Path(__file__).parent.parent / "fonts"
 
 
-def _has_non_latin(text):
-    for ch in text:
-        if ord(ch) > 0x024F and not ch.isspace() and ch not in ".,;:!?'\"-()[]{}":
-            return True
-    return False
+def _has_swedish_ext(text):
+    return any(ch in text for ch in "öåäÖÅÄ")
 
 
 def _has_cyrillic(text):
-    for ch in text:
-        if 0x0400 <= ord(ch) <= 0x04FF:
-            return True
-    return False
+    return any(0x0400 <= ord(ch) <= 0x04FF for ch in text)
 
 
 def load_font(size, text=""):
-    if not (_has_non_latin(text) and not _has_cyrillic(text)):
-        for name in ("Caveat-Regular.ttf", "CaveatBrush-Regular.ttf"):
-            p = FONTS_DIR / name
-            if p.exists():
-                return ImageFont.truetype(str(p), size)
-    for sp in (
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-        "/System/Library/Fonts/Noteworthy.ttc",
-        "/System/Library/Fonts/Supplemental/Comic Sans MS.ttf",
-        "/Library/Fonts/Comic Sans MS.ttf",
-    ):
-        if Path(sp).exists():
-            return ImageFont.truetype(sp, size)
+    p = FONTS_DIR / "Chickpeas.ttf"
+    if p.exists():
+        if _has_swedish_ext(text) and not _has_cyrillic(text):
+            sw = FONTS_DIR / "HandwrittenThin.ttf"
+            if sw.exists():
+                return ImageFont.truetype(str(sw), size)
+        return ImageFont.truetype(str(p), size)
+    for name in ("Caveat-Regular.ttf", "CaveatBrush-Regular.ttf"):
+        fp = FONTS_DIR / name
+        if fp.exists():
+            return ImageFont.truetype(str(fp), size)
     return ImageFont.load_default(size=size)
 
 
@@ -74,10 +64,18 @@ def _measure_date_w(prefix, font):
     return bbox[2] - bbox[0]
 
 
-def _wrap_text(text, date_w):
+def _avg_char_w(font):
+    tmp = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    sample = "abcdefghijklmnopqrstuvwxyz 0123456789"
+    bbox = tmp.textbbox((0, 0), sample, font=font)
+    return max(1, (bbox[2] - bbox[0]) / len(sample))
+
+
+def _wrap_text(text, date_w, font=None):
     usable = PAGE_W - ML - MR
-    cpl = max(30, usable // 14)
-    first_cpl = max(15, (usable - date_w) // 14)
+    cpx = _avg_char_w(font) if font else 10
+    cpl = max(20, int(usable / cpx))
+    first_cpl = max(10, int((usable - date_w) / cpx))
     lines = []
     first = True
     for para in text.split("\n"):
@@ -101,7 +99,7 @@ def _wrap_text(text, date_w):
 def _note_height(note, fb, fd, ft):
     prefix = _date_prefix(note)
     dw = _measure_date_w(prefix, fd)
-    lines = _wrap_text(note.get("text", ""), dw)
+    lines = _wrap_text(note.get("text", ""), dw, fb)
     count = max(1, len(lines)) + 1
     if note.get("techniques"):
         count += 2
@@ -119,7 +117,7 @@ def _draw_page_bg(draw, h):
 def _draw_note(draw, note, cy, fb, fd, ft):
     prefix = _date_prefix(note)
     dw = _measure_date_w(prefix, fd)
-    lines = _wrap_text(note.get("text", ""), dw)
+    lines = _wrap_text(note.get("text", ""), dw, fb)
 
     if prefix:
         draw.text((ML, cy), prefix + "  ", fill=DATE_CLR, font=fd)

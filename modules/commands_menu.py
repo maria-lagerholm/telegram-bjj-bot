@@ -52,6 +52,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("write a note", callback_data="menucmd_note")],
             [InlineKeyboardButton("view my notes", callback_data="menucmd_notes")],
+            [InlineKeyboardButton("manage notes", callback_data="menucmd_journal")],
             [InlineKeyboardButton("set a goal (max 3)", callback_data="menucmd_goal")],
             [InlineKeyboardButton("view my goals", callback_data="menucmd_goals")],
             [InlineKeyboardButton("current focus", callback_data="menucmd_focus")],
@@ -119,7 +120,7 @@ async def menucmd_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     cmd = query.data.replace("menucmd_", "")
 
-    if cmd in ("note", "goal"):
+    if cmd in ("note", "goal", "journal"):
         await query.message.reply_text(
             f"type /{cmd} to get started.",
         )
