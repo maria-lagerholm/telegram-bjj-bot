@@ -5,127 +5,94 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from .database import load_database, save_database
 from .helpers import find_techniques_in_text, get_current_week
-from .note_image import render_note_image
+from .note_image import render_note_image, render_notes_page
 
 state_note_writing = 2
-
 notes_per_page = 3
 
 
 async def note_start_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().strftime("%A, %b %d")
-    prompt_message = (
+    await update.message.reply_text(
         f"*training note: {today}*\n\n"
         "what did you learn?\n"
         "• techniques practiced\n"
         "• what went well\n"
         "• what to work on\n\n"
         "_keep it short: 1 to 20 words_\n\n"
-        "/cancel to abort"
+        "/cancel to abort",
+        parse_mode="Markdown",
     )
-    await update.message.reply_text(prompt_message, parse_mode="Markdown")
     return state_note_writing
 
 
 async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    database = load_database(chat_id)
-    note_text = update.message.text.strip()
+    db = load_database(chat_id)
+    text = update.message.text.strip()
+    wc = len(text.split())
 
-    word_count = len(note_text.split())
-    if word_count < 1:
+    if wc < 1:
         await update.message.reply_text("note can't be empty. write at least 1 word.")
         return state_note_writing
-    if word_count > 20:
-        await update.message.reply_text(
-            f"that's {word_count} words. keep it to 20 or fewer.\n"
-            "try again or /cancel to abort."
-        )
+    if wc > 20:
+        await update.message.reply_text(f"that's {wc} words. keep it to 20 or fewer.\ntry again or /cancel to abort.")
         return state_note_writing
 
     now = datetime.now()
-
-    techniques_found = find_techniques_in_text(note_text)
-
-    new_note = {
+    techs = find_techniques_in_text(text)
+    db["notes"].append({
         "date": now.strftime("%Y-%m-%d"),
         "time": now.strftime("%H:%M"),
         "day": now.strftime("%A"),
-        "text": note_text,
-        "techniques": techniques_found,
+        "text": text,
+        "techniques": techs,
         "created_at": now.isoformat(),
-    }
-
-    database["notes"].append(new_note)
-
-    save_database(chat_id, database)
+    })
+    save_database(chat_id, db)
 
     reply = "note saved!\n\n"
+    if techs:
+        reply += f"detected: {', '.join(techs)}\n\n"
 
-    if techniques_found:
-        techniques_list = ", ".join(techniques_found)
-        reply += f"detected: {techniques_list}\n\n"
-
-    work_on_hint = extract_work_on(note_text)
-
-    if work_on_hint:
-        reply += f"sounds like you want to work on:\n_{work_on_hint}_\n"
-        keyboard = [
-            [
+    hint = _extract_work_on(text)
+    if hint:
+        reply += f"sounds like you want to work on:\n_{hint}_\n"
+        context.user_data["pending_goal_text"] = hint
+        await update.message.reply_text(
+            reply,
+            reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("set as goal", callback_data="notegoal_yes"),
                 InlineKeyboardButton("no thanks", callback_data="notegoal_no"),
-            ]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        context.user_data["pending_goal_text"] = work_on_hint
-        await update.message.reply_text(reply, reply_markup=reply_markup)
+            ]]),
+        )
     else:
         await update.message.reply_text(reply)
-
     return ConversationHandler.END
 
 
-def extract_work_on(text):
+def _extract_work_on(text):
     lower = text.lower()
-
     triggers = [
-        "need to work on",
-        "needs work",
-        "want to work on",
-        "work on",
-        "need to improve",
-        "want to improve",
-        "improve my",
-        "improve on",
-        "should drill",
-        "need to drill",
-        "want to drill",
-        "must practice",
-        "need to practice",
-        "want to practice",
-        "goal:",
-        "goal is",
-        "struggling with",
-        "still struggling",
-        "need more reps",
-        "gotta get better at",
-        "focus on",
-        "need to focus",
+        "need to work on", "needs work", "want to work on", "work on",
+        "need to improve", "want to improve", "improve my", "improve on",
+        "should drill", "need to drill", "want to drill",
+        "must practice", "need to practice", "want to practice",
+        "goal:", "goal is", "struggling with", "still struggling",
+        "need more reps", "gotta get better at", "focus on", "need to focus",
     ]
-
     for trigger in triggers:
         idx = lower.find(trigger)
         if idx == -1:
             continue
         after = text[idx + len(trigger):].strip().lstrip(":").strip()
-        for end_char in ("\n", ".", "!"):
-            end_idx = after.find(end_char)
-            if end_idx != -1:
-                after = after[:end_idx].strip()
+        for end in ("\n", ".", "!"):
+            ei = after.find(end)
+            if ei != -1:
+                after = after[:ei].strip()
                 break
         if after:
             return after
-
     return None
 
 
@@ -133,117 +100,77 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
     query = update.callback_query
     await query.answer()
 
-    if query.data == "notegoal_yes":
-        goal_text = context.user_data.pop("pending_goal_text", None)
-        if not goal_text:
-            await query.edit_message_text("couldn't find the goal text, use /goal to set one manually.")
-            return
-
-        chat_id = query.message.chat_id
-        database = load_database(chat_id)
-
-        active_count = 0
-        for g in database.get("goals", []):
-            if g.get("status", "active") == "active":
-                active_count += 1
-
-        if active_count >= 3:
-            await query.edit_message_text(
-                f"you already have {active_count} active goals (max 3).\n"
-                "complete or remove one first with /goals.",
-            )
-            return
-
-        week = get_current_week()
-        database["goals"].append({
-            "id": uuid.uuid4().hex[:8],
-            "week": week,
-            "goals": goal_text,
-            "status": "active",
-            "created_at": datetime.now().isoformat(),
-            "completed_at": None,
-            "refresh_schedule": [],
-            "refresh_index": 0,
-        })
-        save_database(chat_id, database)
-
-        active_count += 1
-        await query.edit_message_text(
-            f"goal set for {week}:\n\n_{goal_text}_\n\n({active_count}/3 goal slots used)",
-            parse_mode="Markdown",
-        )
-    else:
+    if query.data != "notegoal_yes":
         context.user_data.pop("pending_goal_text", None)
         original = query.message.text or ""
-        clean = original.split("sounds like")[0].strip()
-        await query.edit_message_text(clean or "note saved!")
-
-
-async def send_notes_page(target_message, chat_id, page):
-    database = load_database(chat_id)
-    notes = database.get("notes", [])
-
-    if not notes:
-        await target_message.reply_text("no notes yet. use /note after training!")
+        await query.edit_message_text(original.split("sounds like")[0].strip() or "note saved!")
         return
 
-    total = len(notes)
-    total_pages = (total + notes_per_page - 1) // notes_per_page
-    if total_pages < 1:
-        total_pages = 1
-    if page < 1:
-        page = 1
-    if page > total_pages:
-        page = total_pages
+    goal_text = context.user_data.pop("pending_goal_text", None)
+    if not goal_text:
+        await query.edit_message_text("couldn't find the goal text, use /goal to set one manually.")
+        return
 
-    reversed_notes = list(reversed(notes))
-    start = (page - 1) * notes_per_page
-    end = start + notes_per_page
-    page_notes = reversed_notes[start:end]
+    chat_id = query.message.chat_id
+    db = load_database(chat_id)
+    active = sum(1 for g in db.get("goals", []) if g.get("status", "active") == "active")
 
-    for note in page_notes:
-        img_buf = render_note_image(
-            note_text=note["text"],
-            date_str=note.get("date", ""),
-            time_str=note.get("time", ""),
-            day_str=note.get("day", ""),
-            techniques=note.get("techniques"),
-        )
-        await target_message.reply_photo(photo=img_buf)
+    if active >= 3:
+        await query.edit_message_text(f"you already have {active} active goals (max 3).\ncomplete or remove one first with /goals.")
+        return
+
+    db["goals"].append({
+        "id": uuid.uuid4().hex[:8],
+        "week": get_current_week(),
+        "goals": goal_text,
+        "status": "active",
+        "created_at": datetime.now().isoformat(),
+        "completed_at": None,
+        "refresh_schedule": [],
+        "refresh_index": 0,
+    })
+    save_database(chat_id, db)
+    await query.edit_message_text(
+        f"goal set for {get_current_week()}:\n\n_{goal_text}_\n\n({active + 1}/3 goal slots used)",
+        parse_mode="Markdown",
+    )
+
+
+async def send_notes_page(target, chat_id, page):
+    db = load_database(chat_id)
+    notes = db.get("notes", [])
+    if not notes:
+        await target.reply_text("no notes yet. use /note after training!")
+        return
+
+    page_images = render_notes_page(notes)
+    total = max(1, len(page_images))
+    page = max(1, min(page, total))
+
+    await target.reply_photo(photo=page_images[page - 1])
 
     buttons = []
     if page > 1:
-        buttons.append(
-            InlineKeyboardButton("« prev", callback_data=f"notespage_{page - 1}")
-        )
-    buttons.append(
-        InlineKeyboardButton(f"{page} / {total_pages}", callback_data="notespage_noop")
-    )
-    if page < total_pages:
-        buttons.append(
-            InlineKeyboardButton("next »", callback_data=f"notespage_{page + 1}")
-        )
+        buttons.append(InlineKeyboardButton("« prev", callback_data=f"notespage_{page - 1}"))
+    buttons.append(InlineKeyboardButton(f"{page} / {total}", callback_data="notespage_noop"))
+    if page < total:
+        buttons.append(InlineKeyboardButton("next »", callback_data=f"notespage_{page + 1}"))
 
-    await target_message.reply_text(
-        f"_page {page} of {total_pages}  ({total} notes total)_",
+    await target.reply_text(
+        f"_page {page} of {total}  ({len(notes)} notes total)_",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([buttons]),
     )
 
 
 async def notes_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    await send_notes_page(update.message, chat_id, page=1)
+    await send_notes_page(update.message, update.effective_chat.id, page=1)
 
 
 async def notes_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
-    data = query.data
-    if data == "notespage_noop":
+    if query.data == "notespage_noop":
         return
-
-    page = int(data.replace("notespage_", ""))
-    chat_id = query.message.chat_id
-    await send_notes_page(query.message, chat_id, page)
+    page = int(query.data.replace("notespage_", ""))
+    await send_notes_page(query.message, query.message.chat_id, page)
