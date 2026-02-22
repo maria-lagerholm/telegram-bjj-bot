@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 
 from .database import load_database, save_database
 from .techniques_data import all_techniques
-from .helpers import find_techniques_in_text
 
 
 tool_get_notes = {
@@ -60,19 +59,6 @@ tool_list_techniques = {
     }},
 }
 
-tool_save_note = {
-    "name": "save_training_note",
-    "description": (
-        "Save a training note. Call IMMEDIATELY when the user says 'save a note' "
-        "or 'create a note' or confirms with yes/ja/da/ok/sure. "
-        "Extract the training text and pass as note_text (1 to 20 words). "
-        "Call exactly ONCE. Never call again after success."
-    ),
-    "parameters": {"type": "object", "properties": {
-        "note_text": {"type": "string", "description": "The training note text (1 to 20 words)."},
-    }, "required": ["note_text"]},
-}
-
 tool_set_focus = {
     "name": "set_focus_technique",
     "description": (
@@ -114,12 +100,12 @@ tool_add_to_toolbox = {
 
 all_tools = [
     tool_get_notes, tool_get_goals, tool_get_schedule, tool_get_focus, tool_get_stats,
-    tool_search_technique, tool_list_techniques, tool_save_note, tool_set_focus,
+    tool_search_technique, tool_list_techniques, tool_set_focus,
     tool_add_goal, tool_add_schedule, tool_add_to_toolbox,
 ]
 
 action_tools = [
-    tool_search_technique, tool_list_techniques, tool_save_note, tool_set_focus,
+    tool_search_technique, tool_list_techniques, tool_set_focus,
     tool_add_goal, tool_add_schedule, tool_add_to_toolbox,
 ]
 
@@ -264,36 +250,6 @@ def exec_list_techniques(_chat_id, args):
         lines.append(line)
     lines.append("\nCOMMAND: /focus to set a technique as focus, /toolbox to view known techniques, /technique to browse all")
     return "\n".join(lines)
-
-
-def exec_save_note(chat_id, args):
-    text = args.get("note_text", "").strip()
-    if not text:
-        return "ERROR: empty note."
-    wc = len(text.split())
-    if wc > 20:
-        return f"ERROR: note is {wc} words, max 20."
-    if wc < 1:
-        return "ERROR: note is empty."
-
-    db = load_database(chat_id)
-    now = datetime.now()
-    techs = find_techniques_in_text(text)
-    db["notes"].append({
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M"),
-        "day": now.strftime("%A"),
-        "text": text,
-        "techniques": techs,
-        "created_at": now.isoformat(),
-    })
-    save_database(chat_id, db)
-
-    result = f"SUCCESS: Note saved: \"{text}\""
-    if techs:
-        result += f" (detected: {', '.join(techs)})"
-    result += "\nDo NOT call save_training_note again.\nCOMMAND: /notes to view all notes, /goal to set a goal"
-    return result
 
 
 def _find_by_key(key):
@@ -445,7 +401,6 @@ tool_executors = {
     "get_training_stats": exec_get_stats,
     "search_technique": exec_search_technique,
     "list_techniques": exec_list_techniques,
-    "save_training_note": exec_save_note,
     "set_focus_technique": exec_set_focus,
     "add_goal": exec_add_goal,
     "add_schedule_entry": exec_add_schedule,

@@ -11,7 +11,7 @@ from telegram.ext import (
     filters,
 )
 
-from modules.commands_basic import cancel_command
+from modules.commands_basic import cancel_command, timeout_handler
 from modules.commands_menu import (
     start_command,
     help_command,
@@ -83,12 +83,15 @@ async def map_command(update, context):
 
 async def post_init(application):
     await application.bot.set_my_commands([
-        BotCommand("help", "open menu"),
-        BotCommand("note", "log a training session"),
+        BotCommand("note", "log a training note"),
+        BotCommand("notes", "view my notes"),
         BotCommand("goal", "set a goal"),
+        BotCommand("goals", "view my goals"),
         BotCommand("focus", "current technique focus"),
         BotCommand("technique", "browse techniques"),
-        BotCommand("stats", "your progress"),
+        BotCommand("schedule", "training schedule"),
+        BotCommand("stats", "my progress"),
+        BotCommand("help", "open menu"),
     ])
 
 
@@ -102,14 +105,18 @@ def main():
 
     app = Application.builder().token(token).post_init(post_init).build()
 
+    cmd_fallback = MessageHandler(filters.COMMAND, cancel_command)
+
     goal_conversation = ConversationHandler(
         entry_points=[CommandHandler("goal", goal_start_conversation)],
         states={
             state_goal_setting: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, goal_receive_text)
-            ]
+            ],
+            ConversationHandler.TIMEOUT: [MessageHandler(filters.ALL, timeout_handler)],
         },
-        fallbacks=[CommandHandler("cancel", cancel_command)],
+        fallbacks=[CommandHandler("cancel", cancel_command), cmd_fallback],
+        conversation_timeout=120,
     )
 
     note_conversation = ConversationHandler(
@@ -117,9 +124,11 @@ def main():
         states={
             state_note_writing: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, note_receive_text)
-            ]
+            ],
+            ConversationHandler.TIMEOUT: [MessageHandler(filters.ALL, timeout_handler)],
         },
-        fallbacks=[CommandHandler("cancel", cancel_command)],
+        fallbacks=[CommandHandler("cancel", cancel_command), cmd_fallback],
+        conversation_timeout=120,
     )
 
     import_conversation = ConversationHandler(
@@ -127,9 +136,11 @@ def main():
         states={
             state_import_waiting: [
                 MessageHandler(filters.Document.ALL, import_receive_file)
-            ]
+            ],
+            ConversationHandler.TIMEOUT: [MessageHandler(filters.ALL, timeout_handler)],
         },
-        fallbacks=[CommandHandler("cancel", cancel_command)],
+        fallbacks=[CommandHandler("cancel", cancel_command), cmd_fallback],
+        conversation_timeout=120,
     )
 
     app.add_handler(CommandHandler("start", start_command))

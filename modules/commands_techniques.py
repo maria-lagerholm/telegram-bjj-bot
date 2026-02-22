@@ -118,7 +118,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             keyboard.append([InlineKeyboardButton("✓ in your toolbox, remove", callback_data=f"techunknow_{cat_id}_{tech_id}")])
         else:
             keyboard.append([InlineKeyboardButton("focus on this (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")])
-            keyboard.append([InlineKeyboardButton("I know this, add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")])
+            keyboard.append([InlineKeyboardButton("i know this, add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")])
 
         keyboard.append([InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")])
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -180,7 +180,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         keyboard = [
             [InlineKeyboardButton("focus on this (2 weeks)", callback_data=f"techdrill_{cat_id}_{tech_id}")],
-            [InlineKeyboardButton("I know this, add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")],
+            [InlineKeyboardButton("i know this, add to toolbox", callback_data=f"techknow_{cat_id}_{tech_id}")],
             [InlineKeyboardButton("« back", callback_data=f"techcat_{cat_id}")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)

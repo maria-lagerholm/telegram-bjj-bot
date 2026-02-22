@@ -11,7 +11,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database, data_directory
-from .ai_tools import action_tools, tool_executors, exec_save_note
+from .ai_tools import action_tools, tool_executors
 from .ai_tools import exec_get_notes, exec_get_goals, exec_get_schedule, exec_get_focus, exec_get_stats
 from .ai_guards import is_off_topic, clean_response
 
@@ -36,75 +36,25 @@ base_system_instruction = (
     "The user's data is in YOUR_DATA section below. Use it directly. Never invent data.\n"
     "\n"
     "TOOL RULES:\n"
-    "1. DIRECT COMMANDS: when the user explicitly says 'save a note', 'create a note',\n"
-    "   'create a goal', 'show technique', 'set focus', 'add to schedule', or similar,\n"
-    "   call the matching tool IMMEDIATELY. Do NOT ask for confirmation first.\n"
-    "2. INDIRECT: if the user just describes training without asking to save,\n"
-    "   ask 'want me to save that as a note?' then save on any affirmative reply.\n"
-    "3. After any tool returns success, confirm in one short sentence. Never call the same tool twice.\n"
-    "4. When a technique name appears, call search_technique.\n"
-    "5. When the user asks what techniques exist, call list_techniques.\n"
-    "6. To focus/drill a technique: search_technique first, then set_focus_technique.\n"
-    "7. To add a goal: call add_goal (1 to 7 words).\n"
-    "8. To add schedule: call add_schedule_entry.\n"
-    "9. To mark technique as known: call add_to_toolbox.\n"
+    "1. You CANNOT save notes. If the user wants to save a note, tell them to use /note command.\n"
+    "   They can type /note or send a voice message after typing /note.\n"
+    "2. When a technique name appears, call search_technique.\n"
+    "3. When the user asks what techniques exist, call list_techniques.\n"
+    "4. To focus/drill a technique: search_technique first, then set_focus_technique.\n"
+    "5. To add a goal: call add_goal (1 to 7 words).\n"
+    "6. To add schedule: call add_schedule_entry.\n"
+    "7. To mark technique as known: call add_to_toolbox.\n"
+    "8. After any tool returns success, confirm in one short sentence. Never call the same tool twice.\n"
     "\n"
     "STYLE:\n"
     "Only discuss BJJ, martial arts, fitness, and this user's training.\n"
     "Reply in the same language the user writes in.\n"
     "One or two short sentences max. Casual, friendly, like a training partner.\n"
     "Greet with a short BJJ phrase like 'oss!' or 'let's roll!'.\n"
-    "No dashes as punctuation. No markdown headers. No emojis. No URLs.\n"
-    "End every reply with the most relevant command from this list:\n"
+    "No dashes as punctuation. No markdown headers. No emojis. No URLs. No caps lock.\n"
+    "Always suggest the most relevant command from this list:\n"
     "  /note /notes /goal /goals /focus /technique /toolbox /stats /schedule /reminders /export /map /help\n"
 )
-
-AFFIRMATIVES = {
-    "yes", "yeah", "yep", "yup", "sure", "ok", "okay", "yea",
-    "ja", "japp", "visst", "absolut",
-    "da", "aga", "konechno",
-    "si", "oui", "sim",
-}
-
-SAVE_PHRASES = ["save", "note", "log", "spara", "anteckn", "notera", "сохран", "запис", "заметк"]
-
-
-def _is_affirmative(text):
-    cleaned = text.lower().strip().rstrip("!.,?")
-    if cleaned in AFFIRMATIVES:
-        return True
-    words = cleaned.split()
-    return len(words) <= 3 and any(w in AFFIRMATIVES for w in words)
-
-
-def _last_model_offered_save(chat_id):
-    db = load_database(chat_id)
-    history = db.get("ai_history", [])
-    if len(history) < 2:
-        return None
-
-    last_model = last_user = None
-    for entry in reversed(history):
-        if entry.get("role") == "model" and last_model is None:
-            last_model = entry.get("text", "")
-        elif entry.get("role") == "user" and last_user is None:
-            last_user = entry.get("text", "")
-        if last_model is not None and last_user is not None:
-            break
-
-    if not last_model:
-        return None
-    if not any(p in last_model.lower() for p in SAVE_PHRASES):
-        return None
-    if last_user and last_user != "(voice message)":
-        return last_user
-    for entry in reversed(history):
-        if entry.get("role") == "user":
-            t = entry.get("text", "")
-            if t and t != "(voice message)" and len(t.split()) >= 2:
-                return t
-    return None
-
 
 def build_user_context(chat_id):
     return "\n\n".join([
@@ -324,41 +274,19 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     chat_session = session["chat"] if session else None
     used_model = session["model_name"] if session else None
-    pending = _last_model_offered_save(chat_id)
-
-    if is_text and pending and _is_affirmative(user_text):
-        result = exec_save_note(chat_id, {"note_text": pending})
-        if "SUCCESS" in result:
-            reply = f"saved! \"{pending}\"\n/notes to view all notes, /goal to set a goal"
-            save_history(chat_id, user_text, reply)
-            increment_usage(chat_id, db)
-            increment_global()
-            remaining -= 1
-            if remaining <= 3:
-                reply += f"\n\n({remaining} ai messages left today)"
-            await update.message.reply_text(reply)
-            return
 
     parts = []
     if voice_bytes:
         parts.append(types.Part.from_bytes(data=voice_bytes, mime_type=voice_mime))
-        hint = (
+        parts.append(types.Part(text=(
             "(voice message. transcribe and respond in the same language. "
-            "if they say 'save a note' or 'create a note', call save_training_note immediately. "
-            "if they say 'create a goal' or 'set goal', call add_goal immediately. "
+            "if they ask to create a goal, call add_goal. "
             "if they mention a technique, call search_technique. "
-            "if they want focus/drill, call set_focus_technique. "
-            "if they describe training without asking to save, ask if they want to save it. "
-        )
-        if pending:
-            hint += f"PENDING: you offered to save \"{pending}\". if the user says yes/ja/da/ok/sure, call save_training_note now. "
-        hint += ")"
-        parts.append(types.Part(text=hint))
+            "if they want to focus or drill, call set_focus_technique. "
+            "if they want to save a note, tell them to use /note command.)"
+        )))
     if user_text:
-        if pending and _is_affirmative(user_text):
-            parts.append(types.Part(text=f"{user_text}\n\n(the user confirmed. call save_training_note now with note_text=\"{pending}\". do NOT ask again.)"))
-        else:
-            parts.append(types.Part(text=user_text))
+        parts.append(types.Part(text=user_text))
 
     last_error = None
     delay = 1.0
@@ -382,10 +310,6 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                     reply = "i can help with your BJJ training. try asking about your notes, goals, or schedule!"
 
                 reply = clean_response(reply)
-
-                if is_voice and pending and "save_training_note" not in called_tools:
-                    if "SUCCESS" in exec_save_note(chat_id, {"note_text": pending}):
-                        reply = f"saved! \"{pending}\"\n/notes to view all notes, /goal to set a goal"
 
                 if collected_urls:
                     reply = re.sub(r'https?://\S+', '', reply).strip()

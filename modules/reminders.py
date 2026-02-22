@@ -205,7 +205,7 @@ async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
 
     active_drill = database.get("active_drill")
 
-    message = "*pre-training recap* 🥋\n\n"
+    message = "*pretraining recap* 🥋\n\n"
 
     if active_goals:
         message += "*your goals:*\n"
@@ -231,7 +231,7 @@ async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
 
     message += (
         "_have a great session!_\n\n"
-        "remember to take a note after training - use /note to log what you learned. "
+        "remember to take a note after training. use /note to log what you learned. "
         "pay attention during demonstrations so you can write it down later!"
     )
 

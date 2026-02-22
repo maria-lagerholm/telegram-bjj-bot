@@ -55,7 +55,7 @@ app_tree = {
         ],
         "automatic reminders": [
             "daily check in (did you train?)",
-            "pre-training recap (1h before)",
+            "pretraining recap (1h before)",
             "weekly goal reminder (Monday)",
             "daily focus reminder",
             "spaced repetition refreshes",

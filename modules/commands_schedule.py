@@ -122,7 +122,7 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             f"added *{day}* at {time_str} to your schedule.\n\n"
-            f"you'll get a pre-training recap 1 hour before class.\n"
+            f"you'll get a pretraining recap 1 hour before class.\n"
             f"use /schedule to see your full schedule.",
             parse_mode="Markdown",
         )
