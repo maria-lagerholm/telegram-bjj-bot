@@ -235,7 +235,11 @@ async def run_tool_loop(chat, chat_id, response, max_rounds=5):
                 )
             )
 
-        response = chat.send_message(response_parts)
+        try:
+            response = chat.send_message(response_parts)
+        except Exception as err:
+            logger.warning(f"tool loop send failed: {err}")
+            break
     return response, collected_urls
 
 
@@ -399,28 +403,35 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         except Exception as err:
             last_error = err
             err_str = str(err).lower()
+            is_rate_limit = "429" in err_str or "quota" in err_str or "rate" in err_str
+            is_not_found = "404" in err_str or "not found" in err_str or "no longer available" in err_str or "not supported" in err_str
+
             if chat_session and used_model == model_name:
                 chat_session = None
                 used_model = None
                 logger.warning(f"session expired for {chat_id}, retrying fresh")
                 continue
-            retryable = (
-                "429" in err_str
-                or "quota" in err_str
-                or "404" in err_str
-                or "not found" in err_str
-                or "no longer available" in err_str
-                or "not supported" in err_str
-            )
-            if retryable and model_name != model_candidates[-1]:
+
+            if (is_rate_limit or is_not_found) and model_name != model_candidates[-1]:
                 logger.warning(f"{model_name} unavailable, trying next: {err}")
-                await asyncio.sleep(0.5)
+                delay = 2.0 if is_rate_limit else 0.5
+                await asyncio.sleep(delay)
                 continue
+
             logger.error(f"Gemini error ({model_name}) for chat {chat_id}: {err}")
             break
 
     user_sessions.pop(chat_id, None)
+    err_str = str(last_error).lower() if last_error else ""
+    is_rate_limit = "429" in err_str or "quota" in err_str or "rate" in err_str
     logger.error(f"Gemini API error for chat {chat_id}: {last_error}")
-    await update.message.reply_text(
-        "the ai assistant is temporarily overloaded. you can still use all the commands from the menu!"
-    )
+
+    if is_rate_limit:
+        await update.message.reply_text(
+            "too many messages too fast. wait a minute and try again! "
+            "meanwhile you can use all commands from /help."
+        )
+    else:
+        await update.message.reply_text(
+            "something went wrong with the ai. try again or use /help for all bot features!"
+        )

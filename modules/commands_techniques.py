@@ -212,7 +212,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "technique": tech["name"],
             "description": tech["description"],
             "video_url": tech["video_url"],
-            "category": techniques[cat_id]["name"],
+            "category": all_techniques[cat_id]["name"],
             "toolbox_key": toolbox_key(cat_id, tech_id),
             "start_date": datetime.now().isoformat(),
             "end_date": end_date.isoformat(),
