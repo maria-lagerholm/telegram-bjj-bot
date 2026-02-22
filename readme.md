@@ -1,117 +1,119 @@
 # bjj training bot
 
-a telegram bot that helps you track your bjj journey from white belt to blue belt. log your sessions, set goals, build a technique toolbox, and get reminders before class.
+a telegram bot that helps you track your bjj journey. log sessions, set goals, build a technique toolbox, chat with an AI training partner, and get reminders before class.
 
-## getting started
+each user has their own saved data. clearing the chat or starting a new one does not erase anything.
 
-open the bot on telegram and type `/start`. you will see a list of everything the bot can do. type `/help` at any time to see it again.
+## quick start
 
-## after every class
+open the bot on telegram and type `/start`. a menu appears with four sections: my training, learn, bjj knowledge, and settings. type `/help` at any time to reopen it.
 
-type `/note` and write what you did. include what you practiced, what went well, and what you want to work on.
+you can also just send a text or voice message and the AI will help you.
 
-the bot will:
-• save your note with the date and time
-• detect if you mention something you want to work on and offer to set it as a goal
+## ai chat
+
+send any text or voice message and the bot responds like a training partner. it knows your notes, goals, schedule, focus, and stats. you can ask it about techniques, save notes by voice, set a focus, add goals, or update your schedule just by chatting.
+
+the bot speaks whatever language you write in.
+
+## notes
+
+type `/note` and write what you did (1 to 20 words). the bot saves it with the date and time, then offers to set a goal based on what you wrote.
+
+type `/notes` to view your notes as handwritten style images. pages are numbered and you can go forward or back.
 
 ## goals
 
-type `/goal` to set something you want to improve. you can have up to 3 active goals at a time.
+type `/goal` to set something you want to improve (1 to 7 words). you can have up to 3 active goals.
 
-type `/goals` to see your active goals. from there you can:
-• mark a goal as complete
-• remove a goal you no longer need
-• set a completed goal for spaced repetition refresh (reminders at 1, 2, 3, and 6 months so you don't forget what you learned)
+type `/goals` to see your active goals. from there you can mark one as complete, remove it, or set a completed goal for spaced repetition (reminders at 1, 2, 3, and 6 months).
 
 to add more goals, complete or remove one first.
 
 ## technique library
 
-type `/technique` to browse the full video library organized by category (escapes, guard passes, sweeps, submissions, takedowns, and more).
+type `/technique` to browse the video library organized by category: escapes, guard passes, sweeps, submissions, takedowns, and more.
 
 when viewing a technique you can:
-• **focus on this (2 weeks)** to set it as your current focus
-• **I know this, add to toolbox** to mark it as something you already know
+- focus on it for 2 weeks
+- mark it as known and add it to your toolbox
 
 ## focus
 
-type `/focus` to see the technique you are currently working on. the bot will remind you about it daily.
+type `/focus` to see the technique you are working on. the bot reminds you about it daily.
 
-when you feel comfortable with the technique:
-• **learned it, move to toolbox** to add it to your collection of known techniques
-• **stop focusing** to clear it without adding to toolbox
+when you feel comfortable:
+- move it to your toolbox
+- stop focusing to clear it
 
 you can only have one focus at a time. pick a new one from `/technique` after clearing the current one.
 
 ## toolbox
 
-type `/toolbox` to see all the techniques you have marked as known. this is your personal collection that grows as you learn.
-
-techniques in your toolbox show a check mark in the technique library so you can see what you still need to learn.
+type `/toolbox` to see all techniques you marked as known. techniques in your toolbox show a check mark in the library so you can see what you still need to learn.
 
 ## training schedule
 
-type `/schedule` to set the days and times you train. the bot will send you a reminder 1 hour before each class with:
-• what you did in your last session
-• your current goals
-• your current focus technique
+type `/schedule` to set the days and times you train (half hour slots supported). the bot sends a reminder 1 hour before each class with your last session, current goals, and focus technique. after training it reminds you to take a note.
 
 you can add multiple days, remove individual entries, or clear the whole schedule.
 
 ## daily check in
 
-every day the bot asks if you trained today. answer yes or no. this gets logged so you can track how consistent you are and build a training streak.
+every day the bot asks if you trained. your answer gets logged so you can track consistency and build a training streak.
 
 ## stats
 
-type `/stats` to see your overall progress including:
-• total training sessions and notes
-• current training streak
-• active goals and focus
-• toolbox size
+type `/stats` to see your progress: sessions this week and month, training streak, active goals, focus, toolbox size, and total notes.
 
-## export your data
+## reminders
 
-type `/export` to save all your data. you can choose:
-• **txt** for a readable summary
-• **json** for a full backup
+type `/reminders` to customize the time for each reminder: daily check in, daily focus, weekly goal review (Monday), and spaced repetition refresh.
 
-the bot sends the file directly in the chat so you can save or forward it.
+## export and import
 
-## reference material
+type `/export` to download your data as a readable txt or a full json backup. the bot sends the file directly in the chat.
 
-these commands give you quick access to training advice:
+type `/import` to restore a json backup (max 1 MB).
 
-• `/mindset` mental approach and attitude
-• `/habits` training consistency tips
-• `/etiquette` mat conduct and behavior
-• `/dos` what to focus on as a beginner
-• `/donts` common mistakes to avoid
-• `/scoring` ibjjf competition point system
-• `/illegal` banned techniques at white belt
+## app map
+
+type `/map` to see a visual tree of how the bot is organized.
+
+## bjj knowledge
+
+quick reference material available from the menu or by command:
+
+- `/mindset` mental approach
+- `/habits` training consistency
+- `/etiquette` mat conduct
+- `/dos` what to focus on
+- `/donts` common mistakes
+- `/scoring` ibjjf competition points
+- `/illegal` banned moves at white belt
 
 ## all commands
 
-• `/help` show all commands
-• `/note` log a training session
-• `/notes` view your notes
-• `/goal` set a goal (max 3)
-• `/goals` view and manage goals
-• `/focus` current technique focus
-• `/technique` browse technique library
-• `/toolbox` techniques you know
-• `/stats` your progress
-• `/schedule` set training days and times
-• `/export` save your data
-• `/mindset` mental approach
-• `/habits` training consistency
-• `/etiquette` mat conduct
-• `/dos` what to focus on
-• `/donts` what to avoid
-• `/scoring` competition points
-• `/illegal` banned moves
+| command | what it does |
+|---|---|
+| `/start` | open the bot |
+| `/help` | open the menu |
+| `/note` | log a training session |
+| `/notes` | view your notes |
+| `/goal` | set a goal (max 3) |
+| `/goals` | view and manage goals |
+| `/focus` | current technique focus |
+| `/technique` | browse technique library |
+| `/toolbox` | techniques you know |
+| `/stats` | your progress |
+| `/schedule` | set training days and times |
+| `/reminders` | customize reminder times |
+| `/export` | save your data |
+| `/import` | restore a backup |
+| `/map` | visual app map |
+| `/cancel` | cancel current action |
 
-## setup (for developers)
+## setup for developers
 
 1. get a bot token from [@BotFather](https://t.me/BotFather) on telegram
 2. create a `.env` file in the project root:
@@ -122,5 +124,9 @@ GEMINI_API_KEY=your gemini api key here
 MONTHLY_AI_LIMIT=10000
 ```
 
+to get a free Gemini API key go to [aistudio.google.com](https://aistudio.google.com), sign in, and create an API key. paste it into the `.env` file.
+
 3. install dependencies: `pip install -r requirements.txt`
 4. run the bot: `python main.py`
+
+user data is stored as json files in the `data/` folder, one file per user. the bot supports hundreds of users on a 1 GB server.
