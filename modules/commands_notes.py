@@ -162,25 +162,30 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def send_notes_page(target, chat_id, page):
     db = load_database(chat_id)
     notes = db.get("notes", [])
-    if not notes:
+    goals = [g for g in db.get("goals", []) if g.get("status") == "active"]
+    focus = db.get("active_drill")
+
+    if not notes and not goals and not focus:
         await target.reply_text("no notes yet. use /note after training!")
         return
 
     if _backfill_ids(notes):
         save_database(chat_id, db)
 
-    page_images = render_notes_page(notes)
+    page_images = render_notes_page(notes, goals=goals, focus=focus)
     total = max(1, len(page_images))
+    if page == -1:
+        page = total
     page = max(1, min(page, total))
 
     await target.reply_photo(photo=page_images[page - 1])
 
     buttons = []
     if page > 1:
-        buttons.append(InlineKeyboardButton("« prev", callback_data=f"notespage_{page - 1}"))
+        buttons.append(InlineKeyboardButton("« older", callback_data=f"notespage_{page - 1}"))
     buttons.append(InlineKeyboardButton(f"{page} / {total}", callback_data="notespage_noop"))
     if page < total:
-        buttons.append(InlineKeyboardButton("next »", callback_data=f"notespage_{page + 1}"))
+        buttons.append(InlineKeyboardButton("newer »", callback_data=f"notespage_{page + 1}"))
 
     await target.reply_text(
         f"_page {page} of {total}  ({len(notes)} notes total)_",
@@ -190,7 +195,7 @@ async def send_notes_page(target, chat_id, page):
 
 
 async def notes_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_notes_page(update.message, update.effective_chat.id, page=1)
+    await send_notes_page(update.message, update.effective_chat.id, page=-1)
 
 
 async def notes_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -203,7 +208,7 @@ async def notes_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def journal_manage_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _send_manage_page(update.message, update.effective_chat.id, 1)
+    await _send_manage_page(update.message, update.effective_chat.id, -1)
 
 
 async def _send_manage_page(target, chat_id, page):
@@ -217,6 +222,8 @@ async def _send_manage_page(target, chat_id, page):
         save_database(chat_id, db)
 
     total_pages = max(1, -(-len(notes) // manage_per_page))
+    if page == -1:
+        page = total_pages
     page = max(1, min(page, total_pages))
     start = (page - 1) * manage_per_page
     end = start + manage_per_page
@@ -239,9 +246,9 @@ async def _send_manage_page(target, chat_id, page):
 
     nav = []
     if page > 1:
-        nav.append(InlineKeyboardButton("« prev", callback_data=f"notemanage_{page - 1}"))
+        nav.append(InlineKeyboardButton("« older", callback_data=f"notemanage_{page - 1}"))
     if page < total_pages:
-        nav.append(InlineKeyboardButton("next »", callback_data=f"notemanage_{page + 1}"))
+        nav.append(InlineKeyboardButton("newer »", callback_data=f"notemanage_{page + 1}"))
     if nav:
         keyboard.append(nav)
 
