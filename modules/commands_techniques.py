@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from .techniques_data import all_techniques
 from .database import load_database, save_database
+from .helpers import now_se
 
 
 def toolbox_key(cat_id, tech_id):
@@ -141,7 +142,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 "key": key,
                 "name": tech["name"],
                 "category": all_techniques[cat_id]["name"],
-                "added_at": datetime.now().isoformat(),
+                "added_at": now_se().isoformat(),
             })
             save_database(chat_id, db)
 
@@ -206,7 +207,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         db = load_database(chat_id)
 
-        end_date = datetime.now() + timedelta(days=14)
+        end_date = now_se() + timedelta(days=14)
 
         db["active_drill"] = {
             "technique": tech["name"],
@@ -214,7 +215,7 @@ async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "video_url": tech["video_url"],
             "category": all_techniques[cat_id]["name"],
             "toolbox_key": toolbox_key(cat_id, tech_id),
-            "start_date": datetime.now().isoformat(),
+            "start_date": now_se().isoformat(),
             "end_date": end_date.isoformat(),
         }
 

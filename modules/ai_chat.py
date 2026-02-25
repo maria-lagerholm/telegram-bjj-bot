@@ -3,7 +3,6 @@ import os
 import re
 import asyncio
 import logging
-from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -14,6 +13,7 @@ from .database import load_database, save_database, data_directory
 from .ai_tools import action_tools, tool_executors
 from .ai_tools import exec_get_notes, exec_get_goals, exec_get_schedule, exec_get_focus, exec_get_stats
 from .ai_guards import is_off_topic, clean_response
+from .helpers import now_se
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def build_system_instruction(chat_id):
 
 
 def get_remaining(db):
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now_se().strftime("%Y-%m-%d")
     usage = db.get("ai_usage", {})
     if usage.get("date") != today:
         return DAILY_LIMIT
@@ -80,7 +80,7 @@ def get_remaining(db):
 
 
 def increment_usage(chat_id, db):
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now_se().strftime("%Y-%m-%d")
     usage = db.get("ai_usage", {})
     if usage.get("date") != today:
         usage = {"date": today, "count": 0}
@@ -93,7 +93,7 @@ global_usage_file = data_directory / "global_ai_usage.json"
 
 
 def load_global_usage():
-    month = datetime.now().strftime("%Y-%m")
+    month = now_se().strftime("%Y-%m")
     if global_usage_file.exists():
         with open(global_usage_file, "r") as f:
             data = json.load(f)
@@ -262,7 +262,7 @@ async def handle_chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         tool_config=types.ToolConfig(function_calling_config=types.FunctionCallingConfig(mode="AUTO")),
     )
 
-    now = datetime.now()
+    now = now_se()
     session = user_sessions.get(chat_id)
     if session and (now - session["last_used"]).total_seconds() / 60 > SESSION_TIMEOUT:
         session = None

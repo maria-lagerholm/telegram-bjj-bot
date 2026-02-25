@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
 from .techniques_data import all_techniques
+from .helpers import now_se
 
 
 async def focus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -24,7 +25,7 @@ async def focus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     days_left = 0
     try:
         end_dt = datetime.fromisoformat(active_drill["end_date"])
-        days_left = max(0, (end_dt - datetime.now()).days)
+        days_left = max(0, (end_dt - now_se()).days)
     except (ValueError, KeyError):
         pass
 
@@ -74,13 +75,13 @@ async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "key": key,
                 "name": active_drill["technique"],
                 "category": active_drill.get("category", ""),
-                "added_at": datetime.now().isoformat(),
+                "added_at": now_se().isoformat(),
             })
 
         database["drill_queue"].append({
             "technique": active_drill["technique"],
             "outcome": "toolbox",
-            "finished_at": datetime.now().isoformat(),
+            "finished_at": now_se().isoformat(),
         })
 
         database["active_drill"] = None
@@ -100,7 +101,7 @@ async def focus_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         database["drill_queue"].append({
             "technique": active_drill["technique"],
             "outcome": "stopped",
-            "finished_at": datetime.now().isoformat(),
+            "finished_at": now_se().isoformat(),
         })
 
         database["active_drill"] = None
@@ -142,7 +143,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             all_dates.add(note["date"])
         first_date = sorted(all_dates)[0]
 
-        seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        seven_days_ago = (now_se() - timedelta(days=7)).strftime("%Y-%m-%d")
         for note in database["notes"]:
             if note["date"] >= seven_days_ago:
                 this_week_notes += 1
@@ -155,8 +156,8 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             days_trained += 1
     days_rest = total_checkins - days_trained
 
-    seven_days_ago_str = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-    thirty_days_ago_str = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    seven_days_ago_str = (now_se() - timedelta(days=7)).strftime("%Y-%m-%d")
+    thirty_days_ago_str = (now_se() - timedelta(days=30)).strftime("%Y-%m-%d")
     week_trained = 0
     month_trained = 0
     for entry in training_log:
@@ -166,7 +167,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             month_trained += 1
 
     streak = 0
-    current = datetime.now().date()
+    current = now_se().date()
     trained_dates = []
     for entry in training_log:
         if entry["trained"]:

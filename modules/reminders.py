@@ -3,24 +3,24 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
-from .helpers import get_current_week
+from .helpers import get_current_week, now_se, time_se, SE_TZ
 
 
 async def send_daily_focus_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     database = load_database(chat_id)
-
+    
     active_drill = database.get("active_drill")
     if not active_drill:
         return
-
+        
     days_left = 0
     try:
         end_dt = datetime.fromisoformat(active_drill["end_date"])
-        days_left = max(0, (end_dt - datetime.now()).days)
+        days_left = max(0, (end_dt - now_se()).days)
     except (ValueError, KeyError):
         pass
-
+    
     message = (
         "*focus reminder*\n\n"
         f"you're working on: *{active_drill['technique']}*\n"
@@ -28,7 +28,7 @@ async def send_daily_focus_reminder(context: ContextTypes.DEFAULT_TYPE):
         f"_{active_drill.get('description', '')}_\n\n"
         f"[watch tutorial]({active_drill.get('video_url', '')})"
     )
-
+    
     await context.bot.send_message(
         chat_id=chat_id,
         text=message,
@@ -40,7 +40,7 @@ async def send_weekly_goal_reminder(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     database = load_database(chat_id)
     week = get_current_week()
-
+    
     active_goals = []
     for g in database["goals"]:
         if g.get("status", "active") == "active":
@@ -52,7 +52,7 @@ async def send_weekly_goal_reminder(context: ContextTypes.DEFAULT_TYPE):
             message += f"  • {goal['goals']}\n"
     else:
         message = f"*new week ({week})*\n\nset a goal with /goal!"
-
+    
     await context.bot.send_message(
         chat_id=chat_id,
         text=message,
@@ -62,7 +62,7 @@ async def send_weekly_goal_reminder(context: ContextTypes.DEFAULT_TYPE):
 
 async def send_daily_checkin(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now_se().strftime("%Y-%m-%d")
 
     database = load_database(chat_id)
     for entry in database.get("training_log", []):
@@ -89,8 +89,8 @@ async def checkin_callback(update, context):
     await query.answer()
 
     trained = query.data == "checkin_yes"
-    today = datetime.now().strftime("%Y-%m-%d")
-    day_name = datetime.now().strftime("%A")
+    today = now_se().strftime("%Y-%m-%d")
+    day_name = now_se().strftime("%A")
 
     chat_id = query.message.chat_id
     database = load_database(chat_id)
@@ -108,7 +108,7 @@ async def checkin_callback(update, context):
         "date": today,
         "day": day_name,
         "trained": trained,
-        "logged_at": datetime.now().isoformat(),
+        "logged_at": now_se().isoformat(),
     })
     save_database(chat_id, database)
 
@@ -135,7 +135,7 @@ def get_current_streak(training_log):
         return 0
 
     streak = 0
-    current = datetime.now().date()
+    current = now_se().date()
     for date_str in trained_dates:
         log_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         if log_date == current:
@@ -149,7 +149,7 @@ def get_current_streak(training_log):
 async def send_refresh_reminders(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     database = load_database(chat_id)
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now_se().strftime("%Y-%m-%d")
 
     for goal in database.get("goals", []):
         if goal.get("status") != "completed":
@@ -245,9 +245,9 @@ async def send_pretraining_recap(context: ContextTypes.DEFAULT_TYPE):
 def parse_time(time_str, default_h, default_m):
     try:
         parts = time_str.split(":")
-        return time(hour=int(parts[0]), minute=int(parts[1]))
+        return time_se(int(parts[0]), int(parts[1]))
     except (ValueError, IndexError, AttributeError):
-        return time(hour=default_h, minute=default_m)
+        return time_se(default_h, default_m)
 
 
 def schedule_pretraining_jobs(job_queue, chat_id):
@@ -287,7 +287,7 @@ def schedule_pretraining_jobs(job_queue, chat_id):
         except (ValueError, IndexError):
             continue
 
-        reminder_dt = datetime.combine(datetime.today(), time(hour=hour, minute=minute)) - timedelta(hours=1)
+        reminder_dt = datetime.combine(now_se().date(), time(hour=hour, minute=minute)) - timedelta(hours=1)
         remind_hour = reminder_dt.hour
         remind_minute = reminder_dt.minute
 
@@ -295,7 +295,7 @@ def schedule_pretraining_jobs(job_queue, chat_id):
 
         job_queue.run_daily(
             send_pretraining_recap,
-            time=time(hour=remind_hour, minute=remind_minute),
+            time=time_se(remind_hour, remind_minute),
             days=(day_num,),
             chat_id=chat_id,
             name=job_name,
@@ -322,18 +322,18 @@ def schedule_all_reminders(chat_id, job_queue):
     checkin_name = f"checkin_{chat_id}"
     for job in job_queue.get_jobs_by_name(checkin_name):
         job.schedule_removal()
-
+    
     refresh_name = f"refresh_{chat_id}"
     for job in job_queue.get_jobs_by_name(refresh_name):
         job.schedule_removal()
-
+    
     job_queue.run_daily(
         send_daily_focus_reminder,
         time=focus_time,
         chat_id=chat_id,
         name=focus_name,
     )
-
+    
     job_queue.run_daily(
         send_weekly_goal_reminder,
         time=goal_time,

@@ -1,10 +1,9 @@
 import uuid
-from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
 from .database import load_database, save_database
-from .helpers import find_techniques_in_text, get_current_week
+from .helpers import find_techniques_in_text, get_current_week, now_se
 from .note_image import render_notes_page
 
 state_note_writing = 2
@@ -29,7 +28,7 @@ def _find_note(notes, note_id):
 
 
 async def note_start_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    today = datetime.now().strftime("%A, %b %d")
+    today = now_se().strftime("%A, %b %d")
     await update.message.reply_text(
         f"*training note: {today}*\n\n"
         "what did you learn?\n"
@@ -58,7 +57,7 @@ async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return state_note_writing
 
-    now = datetime.now()
+    now = now_se()
     techs = find_techniques_in_text(text)
     db["notes"].append({
         "id": uuid.uuid4().hex[:8],
@@ -147,7 +146,7 @@ async def note_goal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         "week": get_current_week(),
         "goals": goal_text,
         "status": "active",
-        "created_at": datetime.now().isoformat(),
+        "created_at": now_se().isoformat(),
         "completed_at": None,
         "refresh_schedule": [],
         "refresh_index": 0,

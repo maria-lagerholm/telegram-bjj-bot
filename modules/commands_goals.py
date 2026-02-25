@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
 from .database import load_database, save_database
-from .helpers import get_current_week
+from .helpers import get_current_week, now_se
 
 state_goal_setting = 1
 
@@ -88,7 +88,7 @@ async def goal_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "week": week,
         "goals": goal_text,
         "status": "active",
-        "created_at": datetime.now().isoformat(),
+        "created_at": now_se().isoformat(),
         "completed_at": None,
         "refresh_schedule": [],
         "refresh_index": 0,
@@ -179,20 +179,20 @@ async def goal_action_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             return
 
         goal["status"] = "completed"
-        goal["completed_at"] = datetime.now().isoformat()
+        goal["completed_at"] = now_se().isoformat()
 
         goal["refresh_schedule"] = []
         goal["refresh_index"] = 0
         for days in refresh_intervals:
-            remind_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
+            remind_date = (now_se() + timedelta(days=days)).strftime("%Y-%m-%d")
             goal["refresh_schedule"].append(remind_date)
 
         save_database(chat_id, database)
 
-        date_1m = (datetime.now() + timedelta(days=refresh_intervals[0])).strftime("%b %d")
-        date_2m = (datetime.now() + timedelta(days=refresh_intervals[1])).strftime("%b %d")
-        date_3m = (datetime.now() + timedelta(days=refresh_intervals[2])).strftime("%b %d")
-        date_6m = (datetime.now() + timedelta(days=refresh_intervals[3])).strftime("%b %d")
+        date_1m = (now_se() + timedelta(days=refresh_intervals[0])).strftime("%b %d")
+        date_2m = (now_se() + timedelta(days=refresh_intervals[1])).strftime("%b %d")
+        date_3m = (now_se() + timedelta(days=refresh_intervals[2])).strftime("%b %d")
+        date_6m = (now_se() + timedelta(days=refresh_intervals[3])).strftime("%b %d")
 
         await query.edit_message_text(
             f"✓ *{goal['goals']}* completed!\n\n"

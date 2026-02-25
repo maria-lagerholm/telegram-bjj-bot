@@ -1,8 +1,19 @@
-from datetime import datetime
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
+
+SE_TZ = ZoneInfo("Europe/Stockholm")
+
+
+def now_se():
+    return datetime.now(SE_TZ)
+
+
+def time_se(hour, minute=0):
+    return time(hour=hour, minute=minute, tzinfo=SE_TZ)
 
 
 def get_current_week():
-    now = datetime.now()
+    now = now_se()
     year = now.isocalendar()[0]
     week = now.isocalendar()[1]
     return f"{year}-W{week:02d}"

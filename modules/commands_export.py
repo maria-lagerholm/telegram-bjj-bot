@@ -1,10 +1,10 @@
 import io
 import json
-from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
 from .database import load_database, save_database
+from .helpers import now_se
 
 state_import_waiting = "IMPORT_WAITING_FILE"
 
@@ -37,7 +37,7 @@ async def export_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "export_txt":
         content = build_txt_export(database)
-        filename = f"bjj_training_data_{datetime.now().strftime('%Y-%m-%d')}.txt"
+        filename = f"bjj_training_data_{now_se().strftime('%Y-%m-%d')}.txt"
         buf = io.BytesIO(content.encode("utf-8"))
         buf.name = filename
 
@@ -50,7 +50,7 @@ async def export_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "export_json":
         content = json.dumps(database, indent=2, default=str, ensure_ascii=False)
-        filename = f"bjj_backup_{datetime.now().strftime('%Y-%m-%d')}.json"
+        filename = f"bjj_backup_{now_se().strftime('%Y-%m-%d')}.json"
         buf = io.BytesIO(content.encode("utf-8"))
         buf.name = filename
 
@@ -161,7 +161,7 @@ async def import_receive_file(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 def build_txt_export(db):
     lines = []
-    now = datetime.now()
+    now = now_se()
     lines.append("BJJ Training Data")
     lines.append(f"Exported {now.strftime('%Y-%m-%d %H:%M')}")
     lines.append("")

@@ -1,8 +1,9 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from .database import load_database, save_database
 from .techniques_data import all_techniques
+from .helpers import now_se
 
 
 tool_get_notes = {
@@ -162,13 +163,13 @@ def exec_get_stats(chat_id, _args):
     total_notes = len(db.get("notes", []))
     log = db.get("training_log", [])
     trained = sum(1 for e in log if e.get("trained"))
-    seven_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    seven_ago = (now_se() - timedelta(days=7)).strftime("%Y-%m-%d")
     week_count = sum(1 for e in log if e.get("trained") and e["date"] >= seven_ago)
     active_goals = sum(1 for g in db.get("goals", []) if g.get("status") == "active")
     done_goals = sum(1 for g in db.get("goals", []) if g.get("status") == "completed")
 
     streak = 0
-    current = datetime.now().date()
+    current = now_se().date()
     dates = sorted([e["date"] for e in log if e.get("trained")], reverse=True)
     for ds in dates:
         if datetime.strptime(ds, "%Y-%m-%d").date() == current:
@@ -306,8 +307,8 @@ def exec_set_focus(chat_id, args):
         "video_url": tech.get("video_url", ""),
         "category": all_techniques[cat_id]["name"],
         "toolbox_key": f"{cat_id}:{tech_id}",
-        "start_date": datetime.now().isoformat(),
-        "end_date": (datetime.now() + timedelta(days=14)).isoformat(),
+        "start_date": now_se().isoformat(),
+        "end_date": (now_se() + timedelta(days=14)).isoformat(),
     }
     save_database(chat_id, db)
     result = f"Done! '{tech['name']}' is now your focus for 2 weeks."
@@ -331,7 +332,7 @@ def exec_add_goal(chat_id, args):
     active = sum(1 for g in db.get("goals", []) if g.get("status", "active") == "active")
     if active >= 3:
         return f"ERROR: {active} active goals (max 3). Complete or remove one first.\nCOMMAND: /goals to manage goals"
-    now = datetime.now()
+    now = now_se()
     db["goals"].append({
         "id": uuid.uuid4().hex[:8],
         "week": f"{now.isocalendar()[0]}-W{now.isocalendar()[1]:02d}",
@@ -363,7 +364,7 @@ def exec_add_schedule(chat_id, args):
     for e in db.get("schedule", []):
         if e["day"] == matched and e["time"] == time_str:
             return f"'{matched}' at {time_str} is already on the schedule.\nCOMMAND: /schedule to view schedule"
-    db["schedule"].append({"day": matched, "time": time_str, "added_at": datetime.now().isoformat()})
+    db["schedule"].append({"day": matched, "time": time_str, "added_at": now_se().isoformat()})
     save_database(chat_id, db)
     return f"Added {matched} at {time_str} to the schedule.\nCOMMAND: /schedule to view or change schedule"
 
@@ -386,7 +387,7 @@ def exec_add_to_toolbox(chat_id, args):
         "key": full_key,
         "name": tech["name"],
         "category": all_techniques[cat_id]["name"],
-        "added_at": datetime.now().isoformat(),
+        "added_at": now_se().isoformat(),
     })
     db["toolbox"] = toolbox
     save_database(chat_id, db)

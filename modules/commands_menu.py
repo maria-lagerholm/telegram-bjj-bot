@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -6,6 +6,7 @@ from .techniques_data import all_techniques
 from .database import load_database
 from .commands_techniques import toolbox_key, get_toolbox
 from .app_map import render_app_map
+from .helpers import now_se
 
 
 def main_menu_keyboard():
@@ -352,7 +353,7 @@ async def dispatch_menu_command(cmd, query, context):
         days_left = 0
         try:
             end_dt = datetime.fromisoformat(active_drill["end_date"])
-            days_left = max(0, (end_dt - datetime.now()).days)
+            days_left = max(0, (end_dt - now_se()).days)
         except (ValueError, KeyError):
             pass
         message = (
@@ -397,7 +398,7 @@ async def dispatch_menu_command(cmd, query, context):
             for n in notes:
                 all_dates.add(n["date"])
             first_date = sorted(all_dates)[0]
-            seven_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+            seven_ago = (now_se() - timedelta(days=7)).strftime("%Y-%m-%d")
             for n in notes:
                 if n["date"] >= seven_ago:
                     this_week_notes += 1
@@ -407,8 +408,8 @@ async def dispatch_menu_command(cmd, query, context):
             if e["trained"]:
                 days_trained += 1
         days_rest = len(training_log) - days_trained
-        seven_ago_str = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-        thirty_ago_str = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        seven_ago_str = (now_se() - timedelta(days=7)).strftime("%Y-%m-%d")
+        thirty_ago_str = (now_se() - timedelta(days=30)).strftime("%Y-%m-%d")
         week_trained = 0
         month_trained = 0
         for e in training_log:
@@ -417,7 +418,7 @@ async def dispatch_menu_command(cmd, query, context):
             if e["trained"] and e["date"] >= thirty_ago_str:
                 month_trained += 1
         streak = 0
-        current = datetime.now().date()
+        current = now_se().date()
         trained_dates = []
         for e in training_log:
             if e["trained"]:

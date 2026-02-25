@@ -1,9 +1,9 @@
-from datetime import datetime, time, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
 from .reminders import schedule_pretraining_jobs
+from .helpers import now_se
 
 days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 day_to_num = {
@@ -114,7 +114,7 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db["schedule"].append({
             "day": day,
             "time": time_str,
-            "added_at": datetime.now().isoformat(),
+            "added_at": now_se().isoformat(),
         })
         save_database(chat_id, db)
 
