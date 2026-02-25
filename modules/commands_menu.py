@@ -101,7 +101,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "menu_settings":
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("training schedule", callback_data="menucmd_schedule")],
-            [InlineKeyboardButton("reminder times", callback_data="menucmd_reminders")],
+            [InlineKeyboardButton("reminders", callback_data="menucmd_reminders")],
             [InlineKeyboardButton("export my data", callback_data="menucmd_export")],
             [InlineKeyboardButton("import backup", callback_data="menucmd_import")],
             [InlineKeyboardButton("app map", callback_data="menucmd_map")],
@@ -464,21 +464,31 @@ async def dispatch_menu_command(cmd, query, context):
         return
 
     if cmd == "reminders":
-        from .commands_reminders import reminder_labels, reminder_defaults
         db = load_database(chat_id)
-        rt = db.get("reminder_times", reminder_defaults)
-        message = "*your reminder times*\n\n"
-        for key, label in reminder_labels.items():
-            current = rt.get(key, reminder_defaults[key])
-            message += f"  • {label}: *{current}*\n"
-        message += "\ntap a reminder to change its time:"
-        keyboard = []
-        for key, label in reminder_labels.items():
-            short_label = label[:30]
-            keyboard.append([InlineKeyboardButton(
-                f"change: {short_label}",
-                callback_data=f"remtime_pick_{key}",
-            )])
+        schedule = db.get("schedule", [])
+        disabled = db.get("reminders_disabled", False)
+
+        if not schedule:
+            await query.message.reply_text(
+                "no training schedule set yet. use /schedule first, "
+                "reminders are created automatically from your schedule."
+            )
+            return
+
+        status = "off" if disabled else "on"
+        message = f"*your reminders* ({status})\n\n"
+        message += "reminders are based on your /schedule:\n\n"
+        for entry in schedule:
+            message += f"  {entry['day']} at {entry['time']}\n"
+            message += f"    1h before: pretraining recap\n"
+            message += f"    1h after: note reminder\n\n"
+        message += "refresh reminders for completed goals run on mondays.\n"
+
+        if disabled:
+            keyboard = [[InlineKeyboardButton("turn reminders on", callback_data="rem_toggle_on")]]
+        else:
+            keyboard = [[InlineKeyboardButton("turn reminders off", callback_data="rem_toggle_off")]]
+
         await query.message.reply_text(
             message,
             parse_mode="Markdown",
