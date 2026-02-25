@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from .database import load_database, save_database
-from .reminders import schedule_pretraining_jobs
+from .reminders import schedule_all_reminders
 from .helpers import now_se
 
 days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -118,7 +118,7 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         })
         save_database(chat_id, db)
 
-        schedule_pretraining_jobs(context.application.job_queue, chat_id)
+        schedule_all_reminders(chat_id, context.application.job_queue)
 
         await query.edit_message_text(
             f"added *{day}* at {time_str} to your schedule.\n\n"
@@ -140,7 +140,7 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if 0 <= idx < len(schedule):
             removed = schedule.pop(idx)
             save_database(chat_id, db)
-            schedule_pretraining_jobs(context.application.job_queue, chat_id)
+            schedule_all_reminders(chat_id, context.application.job_queue)
             await query.edit_message_text(
                 f"removed *{removed['day']}* at {removed['time']}.\nuse /schedule to see updates.",
                 parse_mode="Markdown",
@@ -153,7 +153,7 @@ async def schedule_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db = load_database(chat_id)
         db["schedule"] = []
         save_database(chat_id, db)
-        schedule_pretraining_jobs(context.application.job_queue, chat_id)
+        schedule_all_reminders(chat_id, context.application.job_queue)
         await query.edit_message_text("schedule cleared. use /schedule to set new training days.")
 
     elif data == "sched_cancel":

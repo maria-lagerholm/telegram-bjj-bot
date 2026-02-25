@@ -64,8 +64,8 @@ from modules.commands_export import (
     import_receive_file,
     state_import_waiting,
 )
-from modules.reminders import setup_reminders, checkin_callback
-from modules.commands_reminders import reminders_command, reminder_time_callback
+from modules.reminders import setup_reminders
+from modules.commands_reminders import reminders_command, reminder_toggle_callback
 from modules.app_map import render_app_map
 from modules.ai_chat import handle_chat_message
 
@@ -191,12 +191,11 @@ def main():
     app.add_handler(CallbackQueryHandler(menu_callback, pattern="^menu_"))
     app.add_handler(CallbackQueryHandler(menucmd_callback, pattern="^menucmd_"))
     app.add_handler(CallbackQueryHandler(goal_action_callback, pattern="^goal_"))
-    app.add_handler(CallbackQueryHandler(checkin_callback, pattern="^checkin_"))
     app.add_handler(CallbackQueryHandler(note_goal_callback, pattern="^notegoal_"))
     app.add_handler(CallbackQueryHandler(notes_page_callback, pattern="^notespage_"))
     app.add_handler(CallbackQueryHandler(note_manage_callback, pattern="^notedel_"))
     app.add_handler(CallbackQueryHandler(note_manage_callback, pattern="^notemanage_"))
-    app.add_handler(CallbackQueryHandler(reminder_time_callback, pattern="^remtime_"))
+    app.add_handler(CallbackQueryHandler(reminder_toggle_callback, pattern="^rem_toggle_"))
     app.add_handler(CallbackQueryHandler(schedule_callback, pattern="^sched_"))
     app.add_handler(CallbackQueryHandler(export_callback, pattern="^export_"))
     app.add_handler(CallbackQueryHandler(focus_callback, pattern="^focus_"))
