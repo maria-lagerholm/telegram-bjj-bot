@@ -64,7 +64,7 @@ from modules.commands_export import (
     import_receive_file,
     state_import_waiting,
 )
-from modules.reminders import setup_reminders
+from modules.reminders import setup_reminders, schedule_all_reminders
 from modules.commands_reminders import reminders_command, reminder_toggle_callback
 from modules.app_map import render_app_map
 from modules.ai_chat import handle_chat_message
@@ -98,6 +98,16 @@ async def post_init(application):
         BotCommand("stats", "my progress"),
         BotCommand("help", "open menu"),
     ])
+
+    from pathlib import Path
+    data_dir = Path(__file__).parent / "data"
+    if data_dir.exists():
+        for f in data_dir.glob("user_*.json"):
+            try:
+                chat_id = int(f.stem.replace("user_", ""))
+                schedule_all_reminders(chat_id, application.job_queue)
+            except (ValueError, Exception):
+                pass
 
 
 def main():
