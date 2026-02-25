@@ -205,20 +205,19 @@ def render_notes_page(notes_list, goals=None, focus=None):
         return []
 
     hdr_h = _header_height(goals or [], focus)
-    max_y = PAGE_H - 60
+    limit = PAGE_H - 60
     pages = []
     batch = []
     batch_h = MT + hdr_h
 
     for note in (notes_list or []):
         nh = _note_height(note)
-        if batch and (batch_h + nh) > max_y:
+        if batch and (batch_h + nh) > limit:
             pages.append(batch)
-            batch = [note]
-            batch_h = MT + nh
-        else:
-            batch.append(note)
-            batch_h += nh
+            batch = []
+            batch_h = MT
+        batch.append(note)
+        batch_h += nh
     if batch:
         pages.append(batch)
     if not pages:
