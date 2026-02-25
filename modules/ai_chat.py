@@ -38,7 +38,7 @@ base_system_instruction = (
     "TOOL RULES:\n"
     "1. You CANNOT save notes. If the user wants to save a note, tell them to use /note command.\n"
     "   They can type /note or send a voice message after typing /note.\n"
-    "2. When a technique name appears, call search_technique.\n"
+    "2. When a technique name appears, call search_technique. If not in the database, a YouTube link is returned.\n"
     "3. When the user asks what techniques exist, call list_techniques.\n"
     "4. To focus/drill a technique: search_technique first, then set_focus_technique.\n"
     "5. To add a goal: call add_goal (1 to 7 words).\n"

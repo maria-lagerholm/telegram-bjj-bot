@@ -4,6 +4,7 @@ from datetime import timedelta
 from .database import load_database, save_database
 from .techniques_data import all_techniques
 from .helpers import now_se
+from .youtube_search import youtube_search_url
 
 
 tool_get_notes = {
@@ -42,7 +43,8 @@ tool_search_technique = {
     "name": "search_technique",
     "description": (
         "Search the technique database by name. Call when a technique name appears. "
-        "Returns details, video link, and available actions."
+        "Returns details, video link, and available actions. "
+        "If not found in the database, returns a YouTube search link."
     ),
     "parameters": {"type": "object", "properties": {
         "query": {"type": "string", "description": "Technique name to search for."},
@@ -206,7 +208,12 @@ def exec_search_technique(_chat_id, args):
                     matches.append((ck, tk, tech))
 
     if not matches:
-        return f"No technique found for '{query}'. Try /technique to browse all.\nCOMMAND: /technique to browse all techniques"
+        url = youtube_search_url(query)
+        return (
+            f"No technique '{query}' in the database. "
+            f"Here is a YouTube search for it:\nEXACT_VIDEO_URL: {url}\n"
+            "COMMAND: /technique to browse all techniques in the database"
+        )
 
     results = []
     for ck, tk, tech in matches[:10]:
