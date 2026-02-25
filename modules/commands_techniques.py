@@ -36,9 +36,16 @@ async def technique_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton(label, callback_data=f"techcat_{cat_id}")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    text = "*techniques library*\n\nchoose a category:"
+    text = (
+        "*techniques library*\n\nchoose a category:\n\n"
+        "_want more beyond beginner blocks?_\n"
+        "[The Grappling Academy](https://www.youtube.com/@TheGrapplingAcademy/playlists)\n"
+        "[Knight Jiu Jitsu](https://www.youtube.com/@KnightJiuJitsu/playlists)"
+    )
 
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+    await update.message.reply_text(
+        text, parse_mode="Markdown", reply_markup=reply_markup, disable_web_page_preview=True,
+    )
 
 
 async def technique_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

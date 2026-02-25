@@ -1,5 +1,5 @@
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from .database import load_database, save_database
 from .techniques_data import all_techniques
@@ -206,7 +206,13 @@ def exec_search_technique(_chat_id, args):
                     matches.append((ck, tk, tech))
 
     if not matches:
-        return f"No technique found for '{query}'. Try /technique to browse all.\nCOMMAND: /technique to browse all techniques"
+        return (
+            f"No technique found for '{query}'. Try /technique to browse all.\n"
+            "For more techniques beyond the beginner blocks, check these channels:\n"
+            "The Grappling Academy: https://www.youtube.com/@TheGrapplingAcademy/playlists\n"
+            "Knight Jiu Jitsu: https://www.youtube.com/@KnightJiuJitsu/playlists\n"
+            "COMMAND: /technique to browse all techniques"
+        )
 
     results = []
     for ck, tk, tech in matches[:10]:
