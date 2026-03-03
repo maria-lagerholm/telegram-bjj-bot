@@ -35,7 +35,7 @@ async def note_start_conversation(update: Update, context: ContextTypes.DEFAULT_
         "• techniques practiced\n"
         "• what went well\n"
         "• what to work on\n\n"
-        "_keep it short: 1 to 20 words_\n\n"
+        "_write as much as you need_\n\n"
         "/cancel to abort",
         parse_mode="Markdown",
     )
@@ -50,11 +50,6 @@ async def note_receive_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if wc < 1:
         await update.message.reply_text("note can't be empty. write at least 1 word.")
-        return state_note_writing
-    if wc > 20:
-        await update.message.reply_text(
-            f"that's {wc} words. keep it to 20 or fewer.\ntry again or /cancel to abort."
-        )
         return state_note_writing
 
     now = now_se()
@@ -298,7 +293,7 @@ async def note_manage_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.edit_message_text(
             f"*editing note from {note.get('date', '')}*\n\n"
             f"current: _{note.get('text', '')}_\n\n"
-            "type the new text (1 to 20 words)\n/cancel to abort",
+            "type the new text\n/cancel to abort",
             parse_mode="Markdown",
         )
         return state_note_editing
@@ -311,11 +306,6 @@ async def note_edit_receive(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if wc < 1:
         await update.message.reply_text("note can't be empty. write at least 1 word.")
-        return state_note_editing
-    if wc > 20:
-        await update.message.reply_text(
-            f"that's {wc} words. keep it to 20 or fewer.\ntry again or /cancel to abort."
-        )
         return state_note_editing
 
     nid = context.user_data.pop("editing_note_id", None)

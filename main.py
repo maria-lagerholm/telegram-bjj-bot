@@ -140,10 +140,8 @@ def main():
             state_note_writing: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, note_receive_text)
             ],
-            ConversationHandler.TIMEOUT: [MessageHandler(filters.ALL, timeout_handler)],
         },
         fallbacks=[CommandHandler("cancel", cancel_command), cmd_fallback],
-        conversation_timeout=120,
     )
 
     note_edit_conversation = ConversationHandler(
@@ -152,10 +150,8 @@ def main():
             state_note_editing: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, note_edit_receive)
             ],
-            ConversationHandler.TIMEOUT: [MessageHandler(filters.ALL, timeout_handler)],
         },
         fallbacks=[CommandHandler("cancel", cancel_command), cmd_fallback],
-        conversation_timeout=120,
     )
 
     import_conversation = ConversationHandler(
