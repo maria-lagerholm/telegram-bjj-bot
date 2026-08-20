@@ -27,3 +27,4 @@ Filerna hamnar i `output/`:
 - Tvättställ: Villeroy & Boch Loop & Friends 4A590001, Ø390 mm, innerkant Ø330 mm, höjd 190 mm
 - Blandare: Vesani Wilma BLWILMACH, hålkrav 32 till 35 mm, piputsprång 130 mm, blandarhus Ø55 mm
 - Tvättmaskin: LG F2Y5PYP3W, 600 x 475 x 850 mm
+- Konsol: 3 st Svedbergs 47920, 30 till 40 x 303 x 403 mm (BxHxD), fästs i väggen
