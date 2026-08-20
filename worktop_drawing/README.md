@@ -1,6 +1,7 @@
-# Bänkskiva badrum 1100 x 550 mm
+# Bänkskiva badrum 1100 x 600 mm
 
 Ritningsunderlag för CNC skärning av en kompaktlaminatskiva med nedsänkt tvättställ och blandare.
+Djupet är 600 mm eftersom LG vill ha 100 mm luft bakom tvättmaskinen.
 
 ## Körning
 
@@ -11,8 +12,8 @@ python make_drawing.py
 
 Filerna hamnar i `output/`:
 
-- `bankskiva_badrum_1100x550.png` är bilden som skickas till verkstaden
-- `bankskiva_badrum_1100x550.dxf` är exakt geometri i mm för maskinen
+- `bankskiva_badrum_1100x600.png` är bilden som skickas till verkstaden
+- `bankskiva_badrum_1100x600.dxf` är exakt geometri i mm för maskinen
 
 ## Moduler
 

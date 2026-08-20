@@ -11,7 +11,7 @@ from drawing_helpers import cross, dim_h, dim_v, leader
 MACHINE_LINE = 1.0
 
 NOTES = [
-    "MATERIAL: kompaktlaminat, tjocklek 12 mm (bekräftas vid order). Antal: 1 st. Alla mått i mm.",
+    "MATERIAL: kompaktlaminat 1100 x 600 mm, tjocklek 12 mm (bekräftas vid order). Antal: 1 st. Alla mått i mm.",
     "Origo = främre vänstra hörnet. X åt höger, Y mot vägg. Tolerans ±1 mm. Ritningen är ej skalenlig, använd måtten.",
     "URTAG Ø350 för Villeroy & Boch Loop & Friends 4A590001, nedsänkt från ovansidan (keramik Ø390, innerkant Ø330,",
     "      höjd 190, avlopp Ø45). Keramikkanten vilar med 20 mm anliggning runt om. Kontrollera mot medföljande",
@@ -24,17 +24,20 @@ NOTES = [
     "      skålen är Ø350 under skivan. Skivan skruvas eller limmas mot armarna underifrån, inga hål ovanifrån.",
     "      Kontrollera att konsolernas väggfästen inte hamnar på rören bakom maskinen.",
     "      Armarnas underkant måste ligga minst 10 mm över maskinens topp (850), färdig höjd blir ca 890 mm.",
+    "      Främre 197 mm av skivan bärs inte av konsolerna. Sitt inte på framkanten.",
     "Tvättmaskin LG F2Y5PYP3W 600 x 475 x 850 mm visas som referens, ingen bearbetning.",
+    "Maskinen står 100 mm från vägg enligt LG:s rekommendation, därför är skivan 600 mm djup.",
+    "      Skivan går då 25 mm förbi maskinens framkant. Luckan buktar ut 60 mm framför maskinens kropp.",
+    "      Rörgapet kan ökas till 125 mm, då hamnar maskinens framkant i liv med skivan.",
     "Skivan täcker maskinen med 50 mm överhäng på vänster sida. Skålen går fri från maskinen med 40 mm.",
-    "Maskinen står 75 mm från vägg för rören. LG rekommenderar 100 mm, då sticker maskinen ut 25 mm framför skivan.",
     "Inget urtag för rör i bakkant. Lägg till om rörstammen sticker fram framför vägglinjen.",
     "Synliga kanter putsade med 1 mm fas.",
 ]
 
 HOLE_TABLE = [
     "HÅLTABELL (centrum från främre vänstra hörnet)",
-    "  Urtag tvättställ      X 865     Y 275     Ø 350",
-    "  Hål blandare          X 1000    Y 465     Ø 35",
+    "  Urtag tvättställ      X 865     Y 300     Ø 350",
+    "  Hål blandare          X 1000    Y 490     Ø 35",
 ]
 
 
@@ -47,7 +50,7 @@ def draw_top(ax):
 def draw_machine(ax):
     ax.add_patch(
         Rectangle(
-            (s.MACHINE_LEFT_MARGIN, 0),
+            (s.MACHINE_LEFT_MARGIN, s.MACHINE_FRONT_OFFSET),
             s.MACHINE_WIDTH,
             s.MACHINE_DEPTH,
             facecolor="#f5f5f5",
@@ -58,7 +61,7 @@ def draw_machine(ax):
     )
     ax.text(
         s.MACHINE_LEFT_MARGIN + s.MACHINE_WIDTH / 2,
-        s.MACHINE_DEPTH / 2 - 40,
+        s.MACHINE_FRONT_OFFSET + s.MACHINE_DEPTH / 2 - 40,
         "TVÄTTMASKIN\nLG F2Y5PYP3W\n600 x 475 (REF)",
         ha="center",
         va="center",
@@ -128,7 +131,7 @@ def draw_cutouts(ax):
         ls=(0, (4, 3)),
         color="#a0a0a0",
     )
-    ax.text(915, 355, "233", fontsize=8, color="#707070", rotation=55, ha="center")
+    ax.text(915, 380, "233", fontsize=8, color="#707070", rotation=55, ha="center")
     cross(ax, s.BASIN_CENTER_X, s.BASIN_CENTER_Y, size=30, color="#909090")
     cross(ax, s.MIXER_CENTER_X, s.MIXER_CENTER_Y, size=40, color="#909090")
 
@@ -146,20 +149,20 @@ def draw_labels(ax):
     leader(
         ax,
         (s.BASIN_CENTER_X - 138, s.BASIN_CENTER_Y + 138),
-        (330, 690),
+        (330, 740),
         "Keramik Ø390 (REF)",
         color="#707070",
     )
     leader(
         ax,
         (s.MIXER_CENTER_X + 20, s.MIXER_CENTER_Y + 12),
-        (1150, 700),
+        (1150, 750),
         "HÅL Ø35\nBLANDARE",
     )
     leader(
         ax,
-        (s.BRACKET_CENTERS[0], 200),
-        (120, 60),
+        (s.BRACKET_CENTERS[0], 230),
+        (120, 80),
         "3 st KONSOL SVEDBERGS 47920\narm 403 djup, 40 bred (REF)",
         color="#33608f",
     )
@@ -198,27 +201,29 @@ def draw_dimensions(ax):
     dim_h(ax, machine_right, s.TOP_WIDTH, -170, "450", tick_to=-70)
     dim_h(ax, 0, s.TOP_WIDTH, -260, "1100", tick_to=-170)
 
-    dim_h(ax, 0, s.BASIN_CENTER_X, 620, "865", tick_to=s.TOP_DEPTH)
-    dim_h(ax, s.BASIN_CENTER_X, s.TOP_WIDTH, 620, "235", tick_to=s.TOP_DEPTH)
-    dim_h(ax, 0, s.MIXER_CENTER_X, 720, "1000", tick_to=620)
-    dim_h(ax, s.MIXER_CENTER_X, s.TOP_WIDTH, 720, "100", tick_to=620)
+    dim_h(ax, 0, s.BASIN_CENTER_X, 670, "865", tick_to=s.TOP_DEPTH)
+    dim_h(ax, s.BASIN_CENTER_X, s.TOP_WIDTH, 670, "235", tick_to=s.TOP_DEPTH)
+    dim_h(ax, 0, s.MIXER_CENTER_X, 770, "1000", tick_to=670)
+    dim_h(ax, s.MIXER_CENTER_X, s.TOP_WIDTH, 770, "100", tick_to=670)
 
-    dim_v(ax, 0, s.TOP_DEPTH, -80, "550", tick_to=0)
-    dim_v(ax, 0, s.MACHINE_DEPTH, -180, "475 (REF)", tick_to=-80)
-    dim_v(ax, s.MACHINE_DEPTH, s.TOP_DEPTH, -180, "75 rör", tick_to=-80)
+    machine_back = s.MACHINE_FRONT_OFFSET + s.MACHINE_DEPTH
+    dim_v(ax, 0, s.TOP_DEPTH, -80, "600", tick_to=0)
+    dim_v(ax, 0, s.MACHINE_FRONT_OFFSET, -180, "25", tick_to=-80)
+    dim_v(ax, s.MACHINE_FRONT_OFFSET, machine_back, -180, "475 (REF)", tick_to=-80)
+    dim_v(ax, machine_back, s.TOP_DEPTH, -180, "100 rör", tick_to=-80)
     dim_v(ax, s.TOP_DEPTH - s.BRACKET_DEPTH, s.TOP_DEPTH, b1, "403 (REF)")
 
-    dim_v(ax, 0, s.BASIN_CENTER_Y, 1190, "275", tick_to=s.TOP_WIDTH)
-    dim_v(ax, 0, s.MIXER_CENTER_Y, 1300, "465", tick_to=s.TOP_WIDTH)
+    dim_v(ax, 0, s.BASIN_CENTER_Y, 1190, "300", tick_to=s.TOP_WIDTH)
+    dim_v(ax, 0, s.MIXER_CENTER_Y, 1300, "490", tick_to=s.TOP_WIDTH)
 
 
 def build_figure():
-    fig = plt.figure(figsize=(13, 13.5))
-    ax = fig.add_axes([0.05, 0.44, 0.9, 0.50])
+    fig = plt.figure(figsize=(13, 15))
+    ax = fig.add_axes([0.05, 0.45, 0.9, 0.49])
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(-260, 1400)
-    ax.set_ylim(-330, 780)
+    ax.set_ylim(-330, 830)
 
     draw_top(ax)
     draw_machine(ax)
@@ -230,7 +235,7 @@ def build_figure():
     fig.text(
         0.05,
         0.965,
-        "BÄNKSKIVA BADRUM  1100 x 550 mm  kompaktlaminat",
+        "BÄNKSKIVA BADRUM  1100 x 600 mm  kompaktlaminat",
         fontsize=16,
         fontweight="bold",
     )
@@ -242,15 +247,15 @@ def build_figure():
         color="#505050",
     )
 
-    y = 0.405
+    y = 0.415
     for line in NOTES:
         fig.text(0.05, y, line, fontsize=9.5)
-        y = y - 0.0185
+        y = y - 0.0166
 
     y = y - 0.010
     for line in HOLE_TABLE:
         fig.text(0.05, y, line, fontsize=9.5, family="monospace", fontweight="bold")
-        y = y - 0.0185
+        y = y - 0.0166
 
     return fig
 
