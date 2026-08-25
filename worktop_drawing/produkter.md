@@ -1,104 +1,119 @@
 # Skivor på 12 mm som passar i våtrum
 
-Underlag för att beställa skivan på ritningen. Alla priser är inklusive moms om inget annat står.
+Agelito svarar inte. Ring istället, mejl försvinner. Alla priser är inklusive moms om inget annat står.
 
 ## Det här ska beställas
 
 | Post | Värde |
 | --- | --- |
-| Material | kompaktlaminat 12 mm genomgående, alternativt Corian 12 mm |
+| Material | kompaktlaminat 12 eller 13 mm genomgående |
 | Mått | 1100 x 600 mm, tolerans ±1 mm |
 | Urtag | Ø350 mm, centrum X 865, Y 300 |
 | Hål | Ø35 mm, centrum X 1000, Y 490 |
 | Kanter | fyra synliga kanter putsade, 1 mm fas |
-| Vikt | ca 10 kg färdig, ca 16 till 17 kg per m2 |
+| Vikt | ca 10 kg färdig |
 | Filer | `output/bankskiva_badrum_1100x600.dxf` plus båda PNG-bladen |
 
-Kompaktlaminat är samma vara oavsett om leverantören skriver 12 eller 13 mm i katalogen.
-Väljer du 13 mm blir färdig höjd 903 mm istället för 902 mm, inget annat ändras.
+12 och 13 mm är samma handelsvara. Med 13 mm blir färdig höjd 903 mm istället för 902 mm.
 
-## Alternativ A, kompaktlaminat med urtagen färdiga från fabrik
+## Ring i den här ordningen
 
-Detta är det som passar bäst. Du får skivan färdig och slipper leta snickare.
+### 1. Bänkskivabutiken, ring först
 
-**Agelito**, agelito.se, familjeföretag i Sverige som säljer måttbeställda skivor från svenska
-tillverkare, mest till IKEA-kök. De har LG Collection kompaktlaminat 12 mm i sju dekorer,
-listpris 1 823 till 1 995 kr, leveranstid 2 till 3 veckor. Urtag och övrig bearbetning beställs
-med offertknappen där du bifogar ritningen. Ingen förskottsbetalning, du betalar 14 dagar efter
-leverans. Dekoren **Carrara Marble med grå kärna, artikel 3049** är vit marmormönstrad och
-ligger närmast den grå marmoreffekt du ville ha från början. **Zeus Antracit, artikel 7486** är
-mörkgrå.
+Telefon **08-507 801 06**. Svensk webbutik sedan 1999, levererar i hela Sverige.
+Kompaktlaminat 13 mm i många dekorer, inklusive **CM Carrara Marmor med grå kärna S63009**
+och **CM Cento med grå kärna S68036**, båda med grå kärna. Prover kostar 295 kr och kommer
+på 10 till 15 dagar.
 
-**Bänkskivabutiken**, bankskivabutiken.se, telefon 08-507 801 06. Säljer kompaktlaminat, Fenix
-och Corian på mått sedan 1999. Du mejlar mått eller ritning och får ett skriftligt pris, sedan
-får du alltid en ritning att godkänna innan produktion. Leveranstid 2 till 5 veckor. Klarna,
-Swish, kort. Samma fabriker som köksbutikerna men 20 till 40 procent lägre pris.
+De gör urtag på fabriken innan leverans. Du får alltid en ritning att godkänna innan produktion.
+Leveranstid 2 till 5 veckor. Klarna, Swish, kort. Säg i telefonen att du har DXF och PNG redo
+och att det är en privat enstycksorder.
 
-**Bänkskivor Online**, bankskivoronline.se, har en konfigurator där du fyller i mått och lägger
-till urtag för ho och blandare och ser priset direkt. Leveranstid 3 till 4 veckor, frakt 1 495 kr,
-fri frakt över 15 000 kr. Konfiguratorn listar laminat och Corian, så fråga dem om kompaktlaminat
-innan du räknar på den.
+Danska systerbolaget Bordpladefabrikken, bordpladefabrikken.dk, mejl salg@bordpladefabrikken.dk,
+telefon +45 52 51 88 86, är samma fabrik om den svenska linjen är upptagen.
 
-**LG Collection**, lgcoll.se, info@lgcoll.se, 0380-555000, Nässjö. Detta är tillverkaren av 12 mm
-kompaktlaminatet som Agelito säljer. Skarvfritt upp till 4090 x 1290 mm. Använd sidan för att välja
-dekor, men lägg ordern hos en återförsäljare, tillverkaren säljer inte enstaka skivor till privatpersoner.
+### 2. Träbutiken, beställ utan att vänta på svar
 
-## Alternativ B, kapad till mått utan hål och sedan fräst av snickare
+Telefon **08-507 806 37**, mejl kundservice@trabutiken.se, svarar inom 1 till 2 vardagar.
+Eller gå rakt in på produkten och fyll i 1100 x 600 mm, då ser du priset direkt och kan betala
+med kort, Klarna eller Swish. Leveranstid 10 till 12 vardagar.
 
-Billigast och snabbast, men någon måste fräsa de två hålen.
+Kompaktlaminat 13 mm Lamipro i vit, ljusgrå och antracit, med genomfärgad kärna. Kanterna
+slipas på CNC och får bruten kant. De skär till mått, men hålen måste någon fräsa efteråt,
+antingen du, en lokal snickare, eller Ekdahls nedan. Fråga i telefonen om de kan lägga till
+hålen för en tilläggskostnad, det är värt att försöka.
 
-**Träbutiken**, trabutiken.se, telefon 08-507 806 379. Kompaktlaminat 13 mm av märket Lamipro i
-vit, ljusgrå och antracit, alla med genomfärgad kärna. Du anger längd och bredd i millimeter i
-kalkylatorn och ser priset direkt, leveranstid 10 till 12 vardagar. Kanterna slipas på CNC och får
-en bruten kant runt om. Tolerans ±2 mm på längd och bredd, ±0,5 mm på tjocklek.
+### 3. Ekdahls Produktion, CNC-verkstad som specialiserar sig på kompaktlaminat
 
-Tillverkarens egna anvisningar för materialet, som också bekräftar ritningen:
+Telefon **0370-733 70**, mejl kundservice@ekdahls-mobler.se.
+Åkersvägen 44, 568 30 Skillingaryd.
 
-- skivan ska ha stöd minst var 600 mm, ritningen har 595 och 415 mm mellan konsolerna
-- max frihäng 200 mm, ritningen har 197 mm framför konsolarmarna
-- går att skära själv med fintandat sticksågsblad för laminat eller överhandsfräs med hårdmetallfräs
-- går att borra och skruva i underifrån, men borra inte igenom, alternativt montera med silikon
+Familjeföretag som formatfräser, borrar och profilfräser kompaktlaminat (HPL) med CNC.
+Skicka DXF-filen och fråga om de kan både skaffa skivan och fräsa urtagen, eller bara fräsa
+om du först beställer blank skiva hos Träbutiken. De tar enstycksjobb, det är deras affär.
 
-Det svarar på frågan om en vanlig snickare kan bearbeta materialet. Ja, med överhandsfräs.
-Låt honom fräsa Ø350 med en cirkelmall och Ø35 sist, inte med hålsåg, eftersom bryggan mellan
-hålen bara är 41 mm.
+### 4. BARA Bänkskivor, Herrljunga
 
-## Alternativ C, Corian 12 mm
+Telefon **0513-10450** eller **073-070 70 07**, mejl info@barabankskivor.se.
+Björkvägen 5, 524 22 Herrljunga. Över 70 år i branschen, svensktillverkat, du får ritning
+att godkänna innan produktion. De nämner kompaktlaminat på startsidan, men webbutiken
+visar mest vanlig laminat 20 till 40 mm. Fråga specifikt om 12 eller 13 mm kompaktlaminat
+med urtag Ø350 och Ø35. Om de har det är det en bra lokal fabrik. Om de bara har spånskiva
+med laminat, tacka nej.
 
-Corian är solid surface, 12 mm standardtjocklek, helt vattentätt, går att laga och slipa upp och
-bearbetas med vanliga träverktyg. Väger ca 25 kg per m2, alltså ca 16 kg för denna skiva, vilket
-är mer än kompaktlaminat men fortfarande lätt. Finns hos Bänkskivabutiken och Träbutiken som
-badrumsskiva efter mått, från ca 6 600 kr. Observera att de flesta färdiga Corianskivor säljs med
-integrerat handfat, och du har redan ett Villeroy & Boch tvättställ, så beställ skivan med enbart
-urtag Ø350.
+### 5. Partnerwood, CNC-legotillverkare
 
-## Därför inte bygghandeln
+Mejl roger@partnerwood.se. De pressar laminat och bearbetar kompaktlaminat i CNC.
+Samma upplägg som Ekdahls: skicka DXF och fråga om enstycksjobb.
 
-Bauhaus, Hornbach och Byggmax lagerför inte kompaktlaminat. Deras bänkskivor är 28 till 30 mm
-spånskiva med laminat på, till exempel LG Collection 3020 x 610 x 28 mm som väger 34 kg. En sådan
-skiva blir tre gånger så tjock, väger mer än tre gånger så mycket i denna storlek, och den
-spånskivekärnan sväller om vatten kommer in via urtaget ovanför en tvättmaskin.
+## Snabbaste vägen utan att vänta på mejl
+
+1. Ring Bänkskivabutiken 08-507 801 06, be om offert på Carrara Marmor S63009,
+   1100 x 600 x 13 mm, urtag Ø350 och hål Ø35 enligt bifogad ritning.
+2. Samtidigt beställ blank skiva 1100 x 600 mm hos Träbutiken online, så har du material
+   om offerten dröjer.
+3. Om Bänkskivabutiken säger nej till hålen, ring Ekdahls 0370-733 70 och skicka DXF.
+
+## Alternativ material, Corian 12 mm
+
+Om kompaktlaminat fortsätter att vara svårt: Corian 12 mm hos Bänkskivabutiken eller
+Träbutiken. Helt vattentätt, ca 16 kg för denna skiva, från ca 6 600 kr. Beställ med
+enbart urtag Ø350, inte med integrerat handfat, eftersom du redan har Villeroy & Boch.
+
+## Därför inte Agelito, bygghandeln eller Stabletable
+
+Agelito har rätt material men svarar inte på privatförfrågningar.
+Bauhaus, Hornbach och Byggmax har bara 28 till 30 mm spånskiva med laminat, fel material
+över en tvättmaskin.
+Stabletable säljer 12 mm kompaktlaminat, men bara som bordsskivor med deras egna
+gängade insatser och max 1200 x 700 mm utan urtag för ho. Fel produkt.
 
 ## Vad som gäller i våtrum
 
-Det finns ingen våtrumsmärkning för bänkskivor. Kompaktlaminat och Corian är vattentäta rakt
-igenom och behöver ingen kantförsegling, det är hela poängen med att välja dem här.
-Det som regleras är infästningarna. Alla skruvhål i våtzon 1 och 2 ska tätas mot väggens tätskikt
-enligt Branschregler Säker Vatteninstallation, vilket gäller de tre konsolernas väggfästen.
-Svedbergs skriver samma sak i sin monteringsanvisning.
+Kompaktlaminat och Corian är vattentäta rakt igenom och behöver ingen kantförsegling.
+Infästningarna i våtzon 1 och 2 ska tätas mot väggens tätskikt enligt Säker Vatteninstallation.
 
-## Förfrågan att skicka
+## Ringtext, 30 sekunder
 
-Ämne: Kompaktlaminat 12 mm 1100 x 600 mm med urtag, privatperson, 1 st
+Hej, jag heter … och vill beställa en skiva i kompaktlaminat 12 eller 13 mm,
+1100 gånger 600 millimeter, till en tvättbänk i badrum. Jag behöver ett urtag
+diameter 350 för nedsänkt tvättställ och ett hål diameter 35 för blandare.
+Jag har ritning och DXF redo att mejla. Kan ni ta en privat enstycksorder och
+vad blir pris inklusive bearbetning och frakt?
+
+## Mejl om de ber dig skicka
+
+Ämne: Kompaktlaminat 13 mm 1100 x 600 mm med urtag, privatperson, 1 st
 
 Hej,
 
-Jag vill beställa en skiva i kompaktlaminat 12 mm, 1100 x 600 mm, till en tvättbänk i badrum.
-Skivan ska ha ett urtag Ø350 mm för nedsänkt tvättställ och ett hål Ø35 mm för blandare.
-Ritning och DXF med exakta centrummått är bifogade. Fyra synliga kanter, putsade.
-Detta är ett enstycksköp som privatperson och jag betalar direkt.
+Jag vill beställa en skiva i kompaktlaminat 12 eller 13 mm, 1100 x 600 mm,
+till en tvättbänk i badrum. Skivan ska ha urtag Ø350 mm för nedsänkt tvättställ
+och hål Ø35 mm för blandare. Ritning och DXF med exakta centrummått är bifogade.
+Fyra synliga kanter, putsade. Detta är ett enstycksköp som privatperson och jag betalar direkt.
 
-Kan ni bekräfta pris inklusive bearbetning och frakt, leveranstid, samt att bryggan på 41 mm
-mellan de två hålen går att fräsa i ert underlag.
+Önskad dekor om ni har den: Carrara Marmor med grå kärna, annars ljusgrå eller Cento.
+Kan ni bekräfta pris inklusive bearbetning och frakt, leveranstid, samt att bryggan
+på 41 mm mellan de två hålen går att fräsa i ert underlag.
 
 Vänliga hälsningar
