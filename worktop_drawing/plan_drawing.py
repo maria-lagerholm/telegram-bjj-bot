@@ -5,33 +5,38 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle
 
+import edge_detail
 import specs as s
 from drawing_helpers import cross, dim_h, dim_v, leader
 
 MACHINE_LINE = 1.0
 
 NOTES = [
-    "MATERIAL: kompaktlaminat 1100 x 600 mm, tjocklek 12 mm (bekräftas vid order). Antal: 1 st. Alla mått i mm.",
-    "Origo = främre vänstra hörnet. X åt höger, Y mot vägg. Tolerans ±1 mm. Ritningen är ej skalenlig, använd måtten.",
+    "MATERIAL: IKEA EKBACKEN måttbeställd bänkskiva, ljusgrå betongmönstrad, laminat på spånskiva, 28 mm.",
+    "      Beställs som hel skiva, längd 1100 och djup 600 mm (djupklass 45,1 till 63,5 cm). Kantlist på alla 4 sidor.",
+    "      Urtagen nedan görs efter leverans. Antal: 1 st. Alla mått i mm. Tolerans ±1 mm.",
+    "      Origo = främre vänstra hörnet. X åt höger, Y mot vägg. Ritningen är ej skalenlig, använd måtten.",
     "URTAG Ø350 för Villeroy & Boch Loop & Friends 4A590001, nedsänkt från ovansidan (keramik Ø390, innerkant Ø330,",
-    "      höjd 190, avlopp Ø45). Keramikkanten vilar med 20 mm anliggning runt om. Kontrollera mot medföljande",
+    "      höjd 190, avlopp Ø45). Keramikkanten täcker urtaget med 20 mm runt om. Kontrollera mot medföljande",
     "      schablon innan skärning. Godtagbart intervall 340 till 360 mm.",
     "HÅL Ø35 för Vesani Wilma BLWILMACH (tillverkaren anger 32 till 35 mm, blandarhuset Ø55 täcker hålet).",
-    "      Blandaren står i högra bakre hörnet, 233 mm snett bakom tvättställets centrum. Pipen är 130 mm,",
-    "      så vattnet hamnar väl inne i skålen. Cirka 10 mm mellan blandarhus och keramikkant.",
+    "      Blandaren står i högra bakre hörnet, 233 mm snett bakom tvättställets centrum, pipen är 130 mm.",
+    "      Kontrollera med Vesani att blandarens fäste klarar 28 mm skivtjocklek.",
+    "SPÅNSKIVEKÄRNA: täta urtagets och hålets skurna kanter med fuktspärrande lack eller silikon före montering.",
+    "      Sätt tvättställ och blandare i en sträng silikon mot ovansidan, se snitt till höger.",
+    "      Skydda undersidan över tvättmaskinen med IKEA FENSJÖ diffusionsspärr.",
+    "      IKEA anger att laminatskivan inte är avsedd för våtrum, 25 års garantin gäller normal köksanvändning.",
     "KONSOL: 3 st Svedbergs 47920, arm 403 mm djup, 30 till 40 mm bred, 303 mm hög, skruvas i väggen.",
-    "      Centrum X 60, 655 och 1070 ger c/c 595 och 415 mm. Armarna går fria från skålen med minst 10 mm,",
-    "      skålen är Ø350 under skivan. Skivan skruvas eller limmas mot armarna underifrån, inga hål ovanifrån.",
+    "      Centrum X 60, 655 och 1070 ger c/c 595 och 415 mm, under IKEAs gräns på 800 mm mellan stöd.",
+    "      Främre 197 mm bärs inte av konsolerna, under IKEAs gräns på 250 mm fritt överhäng.",
+    "      Armarna går fria från skålen med minst 10 mm, skålen är Ø350 under skivan.",
+    "      Skivan skruvas underifrån i armarna, inga hål ovanifrån. Skruven får gå max 15 mm in i skivan.",
     "      Kontrollera att konsolernas väggfästen inte hamnar på rören bakom maskinen.",
-    "      Armarnas underkant måste ligga minst 10 mm över maskinens topp (850), färdig höjd blir ca 890 mm.",
-    "      Främre 197 mm av skivan bärs inte av konsolerna. Sitt inte på framkanten.",
-    "Tvättmaskin LG F2Y5PYP3W 600 x 475 x 850 mm visas som referens, ingen bearbetning.",
-    "Maskinen står 100 mm från vägg enligt LG:s rekommendation, därför är skivan 600 mm djup.",
-    "      Skivan går då 25 mm förbi maskinens framkant. Luckan buktar ut 60 mm framför maskinens kropp.",
+    "      Färdig höjd = 850 maskin + 10 luft + armens tjocklek + 28 skiva, alltså ca 900 till 915 mm.",
+    "TVÄTTMASKIN LG F2Y5PYP3W 600 x 475 x 850 mm visas som referens, ingen bearbetning.",
+    "      Maskinen står 100 mm från vägg enligt LG. Skivan går 25 mm förbi maskinens framkant.",
     "      Rörgapet kan ökas till 125 mm, då hamnar maskinens framkant i liv med skivan.",
-    "Skivan täcker maskinen med 50 mm överhäng på vänster sida. Skålen går fri från maskinen med 40 mm.",
-    "Inget urtag för rör i bakkant. Lägg till om rörstammen sticker fram framför vägglinjen.",
-    "Synliga kanter putsade med 1 mm fas.",
+    "Skålen går fri från maskinen med 40 mm. Inget urtag för rör i bakkant, lägg till om rörstammen sticker fram.",
 ]
 
 HOLE_TABLE = [
@@ -218,8 +223,8 @@ def draw_dimensions(ax):
 
 
 def build_figure():
-    fig = plt.figure(figsize=(13, 15))
-    ax = fig.add_axes([0.05, 0.45, 0.9, 0.49])
+    fig = plt.figure(figsize=(13, 16.5))
+    ax = fig.add_axes([0.05, 0.49, 0.9, 0.45])
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(-260, 1400)
@@ -234,28 +239,31 @@ def build_figure():
 
     fig.text(
         0.05,
-        0.965,
-        "BÄNKSKIVA BADRUM  1100 x 600 mm  kompaktlaminat",
+        0.968,
+        "BÄNKSKIVA BADRUM  1100 x 600 x 28 mm  IKEA EKBACKEN laminat",
         fontsize=16,
         fontweight="bold",
     )
     fig.text(
         0.05,
-        0.947,
+        0.953,
         "Planvy ovanifrån, underlag för CNC skärning. Alla mått i mm.",
         fontsize=10,
         color="#505050",
     )
 
-    y = 0.415
+    y = 0.455
     for line in NOTES:
         fig.text(0.05, y, line, fontsize=9.5)
-        y = y - 0.0166
+        y = y - 0.0148
 
-    y = y - 0.010
+    y = y - 0.008
     for line in HOLE_TABLE:
         fig.text(0.05, y, line, fontsize=9.5, family="monospace", fontweight="bold")
-        y = y - 0.0166
+        y = y - 0.0148
+
+    detail_ax = fig.add_axes([0.67, 0.12, 0.31, 0.22])
+    edge_detail.draw_detail(detail_ax)
 
     return fig
 
