@@ -63,3 +63,5 @@ Gränserna för frihäng och stödavstånd kommer från tillverkarens anvisning 
 - Konsol: 3 st Svedbergs 47920, 30 mm bred, 303 mm hög, 403 mm djup, fästs i väggen
 
 Var skivan går att köpa i 12 mm står i `produkter.md`.
+Agelito svarar inte, ring istället Bänkskivabutiken 08-507 801 06 eller
+Träbutiken 08-507 806 37, se ringordningen i den filen.
