@@ -33,7 +33,7 @@ def dim_v(ax, y1, y2, x, text, tick_to=None):
         for y in (y1, y2):
             ax.plot([x, tick_to], [y, y], lw=THIN, color="gray")
     ax.text(
-        x + 8,
+        x + 14,
         (y1 + y2) / 2,
         text,
         ha="left",

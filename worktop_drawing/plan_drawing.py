@@ -11,20 +11,26 @@ from drawing_helpers import cross, dim_h, dim_v, leader
 MACHINE_LINE = 1.0
 
 NOTES = [
-    "MATERIAL: kompaktlaminat 1100 x 600 mm, tjocklek 12 mm (bekräftas vid order). Antal: 1 st. Alla mått i mm.",
+    "MATERIAL: kompaktlaminat 12 mm genomgående, 1100 x 600 mm. Antal: 1 st. Alla mått i mm.",
+    "      Beställs i 12 mm. 13 mm fungerar också, färdig höjd blir då 903 mm. Vikt ca 10 kg.",
     "Origo = främre vänstra hörnet. X åt höger, Y mot vägg. Tolerans ±1 mm. Ritningen är ej skalenlig, använd måtten.",
     "URTAG Ø350 för Villeroy & Boch Loop & Friends 4A590001, nedsänkt från ovansidan (keramik Ø390, innerkant Ø330,",
     "      höjd 190, avlopp Ø45). Keramikkanten vilar med 20 mm anliggning runt om. Kontrollera mot medföljande",
     "      schablon innan skärning. Godtagbart intervall 340 till 360 mm.",
     "HÅL Ø35 för Vesani Wilma BLWILMACH (tillverkaren anger 32 till 35 mm, blandarhuset Ø55 täcker hålet).",
     "      Blandaren står i högra bakre hörnet, 233 mm snett bakom tvättställets centrum. Pipen är 130 mm,",
-    "      så vattnet hamnar väl inne i skålen. Cirka 10 mm mellan blandarhus och keramikkant.",
-    "KONSOL: 3 st Svedbergs 47920, arm 403 mm djup, 30 till 40 mm bred, 303 mm hög, skruvas i väggen.",
-    "      Centrum X 60, 655 och 1070 ger c/c 595 och 415 mm. Armarna går fria från skålen med minst 10 mm,",
-    "      skålen är Ø350 under skivan. Skivan skruvas eller limmas mot armarna underifrån, inga hål ovanifrån.",
+    "      så vattnet hamnar väl inne i skålen. 11 mm mellan blandarhus och keramikkant, 41 mm material",
+    "      mellan de två hålen. Fräs hålen, borra inte, så att bryggan mellan dem inte spjälkar.",
+    "KONSOL: 3 st Svedbergs 47920, arm 403 mm djup, 30 mm bred, 303 mm hög totalt, skruvas i väggen.",
+    "      Centrum X 60, 655 och 1070 ger c/c 595 och 415 mm, båda under tillverkarens gräns 600 mm.",
+    "      Armarna går fria från urtaget med 20 mm till vänster och 15 mm till höger.",
+    "      Skivan skruvas underifrån i armarna med borrstopp, eller limmas med MS polymer. Inga hål ovanifrån.",
     "      Kontrollera att konsolernas väggfästen inte hamnar på rören bakom maskinen.",
-    "      Armarnas underkant måste ligga minst 10 mm över maskinens topp (850), färdig höjd blir ca 890 mm.",
-    "      Främre 197 mm av skivan bärs inte av konsolerna. Sitt inte på framkanten.",
+    "HÖJD: se sektion A-A. Maskinens topp 850 + 10 luft + 30 armprofil = 890 underkant skiva,",
+    "      + 12 skiva = 902 mm FÄRDIG HÖJD till ovansidan. Mät armprofilen på din konsol innan montering.",
+    "      Främre 197 mm av skivan bärs inte av konsolerna, precis under gränsen 200 mm frihäng.",
+    "      Sitt inte på framkanten. Limma en stödlist 20 x 40 mm under framkanten mellan konsol 2 och 3",
+    "      om du vill styva upp den 125 mm smala remsan framför urtaget.",
     "Tvättmaskin LG F2Y5PYP3W 600 x 475 x 850 mm visas som referens, ingen bearbetning.",
     "Maskinen står 100 mm från vägg enligt LG:s rekommendation, därför är skivan 600 mm djup.",
     "      Skivan går då 25 mm förbi maskinens framkant. Luckan buktar ut 60 mm framför maskinens kropp.",
@@ -38,6 +44,7 @@ HOLE_TABLE = [
     "HÅLTABELL (centrum från främre vänstra hörnet)",
     "  Urtag tvättställ      X 865     Y 300     Ø 350",
     "  Hål blandare          X 1000    Y 490     Ø 35",
+    "  Färdig höjd ovansida skiva 902 över golv, underkant skiva 890",
 ]
 
 
@@ -163,7 +170,7 @@ def draw_labels(ax):
         ax,
         (s.BRACKET_CENTERS[0], 230),
         (120, 80),
-        "3 st KONSOL SVEDBERGS 47920\narm 403 djup, 40 bred (REF)",
+        "3 st KONSOL SVEDBERGS 47920\narm 403 djup, 30 bred (REF)",
         color="#33608f",
     )
     ax.text(
@@ -218,8 +225,8 @@ def draw_dimensions(ax):
 
 
 def build_figure():
-    fig = plt.figure(figsize=(13, 15))
-    ax = fig.add_axes([0.05, 0.45, 0.9, 0.49])
+    fig = plt.figure(figsize=(13, 18))
+    ax = fig.add_axes([0.05, 0.50, 0.9, 0.44])
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(-260, 1400)
@@ -235,27 +242,27 @@ def build_figure():
     fig.text(
         0.05,
         0.965,
-        "BÄNKSKIVA BADRUM  1100 x 600 mm  kompaktlaminat",
+        "BÄNKSKIVA BADRUM  1100 x 600 x 12 mm  kompaktlaminat",
         fontsize=16,
         fontweight="bold",
     )
     fig.text(
         0.05,
         0.947,
-        "Planvy ovanifrån, underlag för CNC skärning. Alla mått i mm.",
+        "Planvy ovanifrån, underlag för CNC skärning. Höjder finns på sektion A-A. Alla mått i mm.",
         fontsize=10,
         color="#505050",
     )
 
-    y = 0.415
+    y = 0.465
     for line in NOTES:
         fig.text(0.05, y, line, fontsize=9.5)
-        y = y - 0.0166
+        y = y - 0.0125
 
     y = y - 0.010
     for line in HOLE_TABLE:
         fig.text(0.05, y, line, fontsize=9.5, family="monospace", fontweight="bold")
-        y = y - 0.0166
+        y = y - 0.0125
 
     return fig
 
