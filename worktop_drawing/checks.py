@@ -1,8 +1,7 @@
 import math
 
+import materials
 import specs as s
-
-DENSITY = 1.45
 
 
 def spans():
@@ -44,11 +43,7 @@ def mixer_body_to_ceramic():
 
 
 def weight():
-    area = s.TOP_WIDTH * s.TOP_DEPTH
-    area = area - math.pi * (s.BASIN_CUTOUT_DIAMETER / 2) ** 2
-    area = area - math.pi * (s.MIXER_HOLE_DIAMETER / 2) ** 2
-    volume = area * s.TOP_THICKNESS / 1000
-    return volume * DENSITY / 1000
+    return materials.weight(s.TOP_THICKNESS, s.TOP_DENSITY)
 
 
 def rows():

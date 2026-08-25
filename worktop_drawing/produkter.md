@@ -1,119 +1,142 @@
-# Skivor på 12 mm som passar i våtrum
+# Bänkskiva som passar våtrum, laminat och alternativ
 
-Agelito svarar inte. Ring istället, mejl försvinner. Alla priser är inklusive moms om inget annat står.
+Ritningen är gjord för 12 mm, men allt räknas om från `TOP_THICKNESS` i `specs.py`.
+Kör `python make_drawing.py` så får du både kontrollen och materialtabellen.
 
-## Det här ska beställas
+## Djupet sorterar bort nästan allt
 
-| Post | Värde |
-| --- | --- |
-| Material | kompaktlaminat 12 eller 13 mm genomgående |
-| Mått | 1100 x 600 mm, tolerans ±1 mm |
-| Urtag | Ø350 mm, centrum X 865, Y 300 |
-| Hål | Ø35 mm, centrum X 1000, Y 490 |
-| Kanter | fyra synliga kanter putsade, 1 mm fas |
-| Vikt | ca 10 kg färdig |
-| Filer | `output/bankskiva_badrum_1100x600.dxf` plus båda PNG-bladen |
+Tvättmaskinen är 475 mm djup och LG vill ha 100 mm luft bakom, alltså minst 575 mm.
+Ritningen använder 600 mm. De färdiga badrumsbänkskivorna är gjorda för kommoder och
+stannar på 460 mm, därför faller de bort direkt:
 
-12 och 13 mm är samma handelsvara. Med 13 mm blir färdig höjd 903 mm istället för 902 mm.
+| Produkt | Material | Tjocklek | Djup | Varför inte |
+| --- | --- | --- | --- | --- |
+| Hafa OnTop | laminat på spånskiva | 19,6 mm | max 462 mm | 138 mm för smal |
+| Svedbergs Poem, Kvarts | laminat | 20 mm | 460 mm | för smal |
+| Macro Design Crown+ | Dekton | 12 mm | 460 mm | för smal |
 
-## Ring i den här ordningen
+Alla tre är i övrigt bra, fukttröga och gjorda för badrum. De passar bara inte över en
+tvättmaskin. Ta inte den kampen, det finns inget sätt att göra en 462 mm skiva 600 mm djup.
 
-### 1. Bänkskivabutiken, ring först
+## Det som är djupt nog
 
-Telefon **08-507 801 06**. Svensk webbutik sedan 1999, levererar i hela Sverige.
-Kompaktlaminat 13 mm i många dekorer, inklusive **CM Carrara Marmor med grå kärna S63009**
-och **CM Cento med grå kärna S68036**, båda med grå kärna. Prover kostar 295 kr och kommer
-på 10 till 15 dagar.
+### Svedbergs Tvätt & Tork bänkskiva, bästa laminatvalet
 
-De gör urtag på fabriken innan leverans. Du får alltid en ritning att godkänna innan produktion.
-Leveranstid 2 till 5 veckor. Klarna, Swish, kort. Säg i telefonen att du har DXF och PNG redo
-och att det är en privat enstycksorder.
+Laminat på spånskiva, **28 mm tjock, 630 mm djup**, säljs i metervara upp till 2400 mm i sju
+utföranden: vit, ljusgrå, mörkgrå, svart, kvarts, glimmer och skiffer.
+BvB-bedömd och accepterad, SundaHus, listad i Svanens husproduktportal.
 
-Danska systerbolaget Bordpladefabrikken, bordpladefabrikken.dk, mejl salg@bordpladefabrikken.dk,
-telefon +45 52 51 88 86, är samma fabrik om den svenska linjen är upptagen.
+Det avgörande: Svedbergs skriver själva att skivan **passar till konsol 47920**, alltså exakt
+den konsol ritningen bygger på. Detta är deras eget system för en bänk över tvättmaskin.
 
-### 2. Träbutiken, beställ utan att vänta på svar
+- BSK100 vit, **2 290 kr**, i lager hos prokakel.se
+- BSK102 kvarts, **2 990 kr**, i lager hos prokakel.se
+- BSK101 skiffer, BSK103 glimmer, samma upplägg
 
-Telefon **08-507 806 37**, mejl kundservice@trabutiken.se, svarar inom 1 till 2 vardagar.
-Eller gå rakt in på produkten och fyll i 1100 x 600 mm, då ser du priset direkt och kan betala
-med kort, Klarna eller Swish. Leveranstid 10 till 12 vardagar.
+Kapas vid montering. Du kapar längden till 1100 mm och kan behålla 630 mm djup eller
+klyva bakkanten till 600 mm. Framkanten är fabriksbehandlad, spara den.
 
-Kompaktlaminat 13 mm Lamipro i vit, ljusgrå och antracit, med genomfärgad kärna. Kanterna
-slipas på CNC och får bruten kant. De skär till mått, men hålen måste någon fräsa efteråt,
-antingen du, en lokal snickare, eller Ekdahls nedan. Fråga i telefonen om de kan lägga till
-hålen för en tilläggskostnad, det är värt att försöka.
+Konsekvenser av 28 mm:
 
-### 3. Ekdahls Produktion, CNC-verkstad som specialiserar sig på kompaktlaminat
+- färdig höjd blir **918 mm** istället för 902 mm, se tabellen nedan
+- kärnan är spånskiva, alltså inte vattentät, alla kapsnitt och båda hålen måste tätas
+- frihänget blir 227 mm vid 630 mm djup, men 28 mm spånskiva är styvare i böj än 12 mm
+  kompaktlaminat, så det håller
 
-Telefon **0370-733 70**, mejl kundservice@ekdahls-mobler.se.
-Åkersvägen 44, 568 30 Skillingaryd.
+### Kökslaminat 30 mm på mått med urtagen färdiga
 
-Familjeföretag som formatfräser, borrar och profilfräser kompaktlaminat (HPL) med CNC.
-Skicka DXF-filen och fråga om de kan både skaffa skivan och fräsa urtagen, eller bara fräsa
-om du först beställer blank skiva hos Träbutiken. De tar enstycksjobb, det är deras affär.
+Billigaste vägen. Samma leverantörer som redan står i ringlistan säljer laminat på mått i
+610 till 635 mm djup, och laminat är deras huvudprodukt, så de svarar snabbt och gör
+urtagen i fabrik enligt din DXF.
 
-### 4. BARA Bänkskivor, Herrljunga
+- Bänkskivabutiken **08-507 801 06**, kundservice@bankskivabutiken.se
+- Bänkskivor Online, konfigurator med urtag för ho och blandare, pris direkt
+- BARA Bänkskivor **0513-10450**, info@barabankskivor.se
 
-Telefon **0513-10450** eller **073-070 70 07**, mejl info@barabankskivor.se.
-Björkvägen 5, 524 22 Herrljunga. Över 70 år i branschen, svensktillverkat, du får ritning
-att godkänna innan produktion. De nämner kompaktlaminat på startsidan, men webbutiken
-visar mest vanlig laminat 20 till 40 mm. Fråga specifikt om 12 eller 13 mm kompaktlaminat
-med urtag Ø350 och Ø35. Om de har det är det en bra lokal fabrik. Om de bara har spånskiva
-med laminat, tacka nej.
+Färdig höjd blir 920 mm. Samma spånskivekärna som ovan, samma tätningskrav.
 
-### 5. Partnerwood, CNC-legotillverkare
+### GetaCore 10 mm, om du vill ha tunt och vattentätt utan kompaktlaminat
 
-Mejl roger@partnerwood.se. De pressar laminat och bearbetar kompaktlaminat i CNC.
-Samma upplägg som Ekdahls: skicka DXF och fråga om enstycksjobb.
+Akrylbunden solid surface från Westag, skivor upp till 4100 x 1250 mm.
+Westag anger att **Optimal 10 mm har samma stabilitet som 12 mm**. Porfri yta, går att limma
+optiskt fogfritt, går att slipa om, bearbetas med vanliga träverktyg.
 
-## Snabbaste vägen utan att vänta på mejl
+Med 10 mm blir färdig höjd **exakt 900 mm**, och skivan väger ca 8 kg, lättast av allt i
+tabellen. Bänkskivabutiken har GetaCore i sortimentet, ring 08-507 801 06 och fråga om
+10 mm med urtag Ø350 och hål Ø35.
 
-1. Ring Bänkskivabutiken 08-507 801 06, be om offert på Carrara Marmor S63009,
-   1100 x 600 x 13 mm, urtag Ø350 och hål Ø35 enligt bifogad ritning.
-2. Samtidigt beställ blank skiva 1100 x 600 mm hos Träbutiken online, så har du material
-   om offerten dröjer.
-3. Om Bänkskivabutiken säger nej till hålen, ring Ekdahls 0370-733 70 och skicka DXF.
+## Vad tjockleken gör med höjden
 
-## Alternativ material, Corian 12 mm
+Utskrift från `materials.py`. Höjd är ovansidan av skivan över golvet med 10 mm luftspalt.
+Lägst är vad du kan komma ned till med 5 mm luftspalt, som är minsta rimliga för en maskin
+som vibrerar och ska gå att dra ut.
 
-Om kompaktlaminat fortsätter att vara svårt: Corian 12 mm hos Bänkskivabutiken eller
-Träbutiken. Helt vattentätt, ca 16 kg för denna skiva, från ca 6 600 kr. Beställ med
-enbart urtag Ø350, inte med integrerat handfat, eftersom du redan har Villeroy & Boch.
+```
+material                              höjd  lägst   vikt  vattentät  600 djup
+GetaCore 10 mm solid surface            900    895    7.9         ja        ja
+kompaktlaminat 12 mm                    902    897    9.8         ja        ja
+Corian 12 mm solid surface              902    897   11.5         ja        ja
+kompaktlaminat 13 mm                    903    898   10.6         ja        ja
+Hafa OnTop laminat 19,6 mm              910    905    8.1        nej       nej
+Svedbergs Tvatt o Tork laminat 28 mm    918    913   10.7        nej        ja
+kokslaminat pa spanskiva 30 mm          920    915   11.5        nej        ja
+```
 
-## Därför inte Agelito, bygghandeln eller Stabletable
+Två saker att läsa ur tabellen:
 
-Agelito har rätt material men svarar inte på privatförfrågningar.
-Bauhaus, Hornbach och Byggmax har bara 28 till 30 mm spånskiva med laminat, fel material
-över en tvättmaskin.
-Stabletable säljer 12 mm kompaktlaminat, men bara som bordsskivor med deras egna
-gängade insatser och max 1200 x 700 mm utan urtag för ho. Fel produkt.
+1. **Vikten är inget argument.** Allt landar mellan 8 och 12 kg, eftersom kompaktlaminat är
+   dubbelt så tätt som spånskiva och därför väger nästan lika mycket i halva tjockleken.
+   Välj alltså på höjd, vattentålighet och pris, inte på vikt.
+2. **Tjockleken sätter golvet för höjden.** Maskinens topp ligger på 850 och konsolarmen är
+   30 mm, så underkanten på skivan kan aldrig komma under 885. Med 28 eller 30 mm hamnar du
+   på 918 till 920 mm hur du än vrider på det. Standard bänkhöjd är 900 mm.
 
-## Vad som gäller i våtrum
+## Om du väljer spånskivekärna, gör detta
 
-Kompaktlaminat och Corian är vattentäta rakt igenom och behöver ingen kantförsegling.
-Infästningarna i våtzon 1 och 2 ska tätas mot väggens tätskikt enligt Säker Vatteninstallation.
+Laminat på spånskiva är fukttrögt, inte vattentätt. Både Hafa och Svedbergs skriver i sina
+egna skötselråd att snittytorna ska silikoneras vid håltagning, annars sväller kärnan.
 
-## Ringtext, 30 sekunder
+1. Täta båda hålens kanter och alla kapsnitt med silikon, fuktspärr eller tätningslack
+   innan tvättstället monteras.
+2. Lägg en diffusionsspärr under skivan över maskinen, ånga från tvätten går uppåt.
+3. Montera tvättstället med fog runt hela keramikkanten så vatten inte kryper ner i urtaget.
+4. Torka bort stående vatten, det är det som förstör kärnan över tid.
 
-Hej, jag heter … och vill beställa en skiva i kompaktlaminat 12 eller 13 mm,
-1100 gånger 600 millimeter, till en tvättbänk i badrum. Jag behöver ett urtag
-diameter 350 för nedsänkt tvättställ och ett hål diameter 35 för blandare.
-Jag har ritning och DXF redo att mejla. Kan ni ta en privat enstycksorder och
-vad blir pris inklusive bearbetning och frakt?
+Gör du detta håller en laminatskiva i badrum i många år, det är så gott som alla svenska
+badrumsmöbler är byggda. Skippar du det sväller kanten runt urtaget inom ett par år.
 
-## Mejl om de ber dig skicka
+## Ändra ritningen till valt material
 
-Ämne: Kompaktlaminat 13 mm 1100 x 600 mm med urtag, privatperson, 1 st
+Sätt tjocklek och densitet i `specs.py` och kör om. Densiteten är 1450 för kompaktlaminat,
+1400 för GetaCore, 1700 för Corian och 680 för laminat på spånskiva.
 
-Hej,
+```python
+TOP_THICKNESS = 28
+TOP_DENSITY = 680
+```
 
-Jag vill beställa en skiva i kompaktlaminat 12 eller 13 mm, 1100 x 600 mm,
-till en tvättbänk i badrum. Skivan ska ha urtag Ø350 mm för nedsänkt tvättställ
-och hål Ø35 mm för blandare. Ritning och DXF med exakta centrummått är bifogade.
-Fyra synliga kanter, putsade. Detta är ett enstycksköp som privatperson och jag betalar direkt.
+```bash
+python make_drawing.py
+```
 
-Önskad dekor om ni har den: Carrara Marmor med grå kärna, annars ljusgrå eller Cento.
-Kan ni bekräfta pris inklusive bearbetning och frakt, leveranstid, samt att bryggan
-på 41 mm mellan de två hålen går att fräsa i ert underlag.
+Höjdkedjan på sektion A-A, noterna och kontrollen räknas om automatiskt.
+Väljer du 630 mm djup, sätt även `TOP_DEPTH = 630`. Då säger kontrollen FEL på frihänget,
+227 mm mot gränsen 200 mm. Den gränsen kommer från kompaktlaminattillverkaren och gäller
+inte för 28 mm spånskiva, så för Svedbergsskivan är det den enda varningen du kan ignorera.
 
-Vänliga hälsningar
+## Ringordning
+
+1. **prokakel.se** eller närmaste Svedbergs-återförsäljare, BSK100 eller BSK102,
+   28 mm, 630 djup, passar konsol 47920. I lager.
+2. **Bänkskivabutiken 08-507 801 06**, fråga om tre saker i samma samtal:
+   GetaCore 10 mm, kompaktlaminat 13 mm, och kökslaminat 30 mm, alla 1100 x 600 mm
+   med urtag Ø350 och hål Ø35. Be om pris på alla tre så kan du välja på höjd och pris.
+3. **BARA Bänkskivor 0513-10450** om du vill ha en svensk fabrik med ritningsgodkännande.
+
+## Ringtext
+
+Hej, jag ska sätta en bänkskiva över en tvättmaskin i badrummet, på Svedbergs
+konsol 47920. Skivan ska vara 1100 gånger 600 millimeter med urtag diameter 350
+för nedsänkt tvättställ och hål diameter 35 för blandare. Jag har ritning och DXF.
+Vad kan ni erbjuda i laminat eller solid surface som klarar våtrum, och hur tjock
+blir skivan? Tjockleken avgör min färdiga höjd så den behöver jag veta.
