@@ -5,46 +5,60 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle
 
+import checks
 import specs as s
 from drawing_helpers import cross, dim_h, dim_v, leader
 
 MACHINE_LINE = 1.0
 
 NOTES = [
-    "MATERIAL: kompaktlaminat 12 mm genomgående, 1100 x 600 mm. Antal: 1 st. Alla mått i mm.",
-    "      Beställs i 12 mm. 13 mm fungerar också, färdig höjd blir då 903 mm. Vikt ca 10 kg.",
+    f"MATERIAL: {s.MATERIAL_NAME} {s.TOP_THICKNESS:g} mm, {s.TOP_WIDTH} x {s.TOP_DEPTH} mm. Antal: 1 st. Alla mått i mm.",
+    f"      Vikt ca {checks.weight():.0f} kg. Byter du tjocklek ändras färdig höjd, se sektion A-A.",
     "Origo = främre vänstra hörnet. X åt höger, Y mot vägg. Tolerans ±1 mm. Ritningen är ej skalenlig, använd måtten.",
     "URTAG Ø350 för Villeroy & Boch Loop & Friends 4A590001, nedsänkt från ovansidan (keramik Ø390, innerkant Ø330,",
     "      höjd 190, avlopp Ø45). Keramikkanten vilar med 20 mm anliggning runt om. Kontrollera mot medföljande",
     "      schablon innan skärning. Godtagbart intervall 340 till 360 mm.",
     "HÅL Ø35 för Vesani Wilma BLWILMACH (tillverkaren anger 32 till 35 mm, blandarhuset Ø55 täcker hålet).",
     "      Blandaren står i högra bakre hörnet, 233 mm snett bakom tvättställets centrum. Pipen är 130 mm,",
-    "      så vattnet hamnar väl inne i skålen. 11 mm mellan blandarhus och keramikkant, 41 mm material",
+    f"      så vattnet hamnar väl inne i skålen. {checks.mixer_body_to_ceramic():.0f} mm mellan blandarhus och keramikkant,"
+    f" {checks.basin_to_mixer_bridge():.0f} mm material",
     "      mellan de två hålen. Fräs hålen, borra inte, så att bryggan mellan dem inte spjälkar.",
-    "KONSOL: 3 st Svedbergs 47920, arm 403 mm djup, 30 mm bred, 303 mm hög totalt, skruvas i väggen.",
-    "      Centrum X 60, 655 och 1070 ger c/c 595 och 415 mm, båda under tillverkarens gräns 600 mm.",
-    "      Armarna går fria från urtaget med 20 mm till vänster och 15 mm till höger.",
+    f"KONSOL: 3 st Svedbergs 47920, arm {s.BRACKET_DEPTH} mm djup, {s.BRACKET_WIDTH} mm bred,"
+    f" {s.BRACKET_TOTAL_HEIGHT} mm hög totalt, skruvas i väggen.",
+    f"      Centrum X {s.BRACKET_CENTERS[0]}, {s.BRACKET_CENTERS[1]} och {s.BRACKET_CENTERS[2]}"
+    f" ger största stödavstånd {max(checks.spans()):.0f} mm.",
+    f"      Armarna går fria från urtaget med minst {checks.bracket_to_basin_gap():.0f} mm.",
     "      Skivan skruvas underifrån i armarna med borrstopp, eller limmas med MS polymer. Inga hål ovanifrån.",
     "      Kontrollera att konsolernas väggfästen inte hamnar på rören bakom maskinen.",
-    "HÖJD: se sektion A-A. Maskinens topp 850 + 10 luft + 30 armprofil = 890 underkant skiva,",
-    "      + 12 skiva = 902 mm FÄRDIG HÖJD till ovansidan. Mät armprofilen på din konsol innan montering.",
-    "      Främre 197 mm av skivan bärs inte av konsolerna, precis under gränsen 200 mm frihäng.",
+    f"HÖJD: se sektion A-A. Maskinens topp {s.MACHINE_HEIGHT} + {s.MACHINE_CLEARANCE} luft"
+    f" + {s.BRACKET_ARM_HEIGHT} armprofil = {s.TOP_UNDERSIDE} underkant skiva,",
+    f"      + {s.TOP_THICKNESS:g} skiva = {s.FINISHED_HEIGHT:g} mm FÄRDIG HÖJD till ovansidan."
+    " Mät armprofilen på din konsol innan montering.",
+    f"      Främre {s.FRONT_OVERHANG} mm av skivan bärs inte av konsolerna.",
     "      Sitt inte på framkanten. Limma en stödlist 20 x 40 mm under framkanten mellan konsol 2 och 3",
-    "      om du vill styva upp den 125 mm smala remsan framför urtaget.",
-    "Tvättmaskin LG F2Y5PYP3W 600 x 475 x 850 mm visas som referens, ingen bearbetning.",
-    "Maskinen står 100 mm från vägg enligt LG:s rekommendation, därför är skivan 600 mm djup.",
-    "      Skivan går då 25 mm förbi maskinens framkant. Luckan buktar ut 60 mm framför maskinens kropp.",
-    "      Rörgapet kan ökas till 125 mm, då hamnar maskinens framkant i liv med skivan.",
+    f"      om du vill styva upp den {s.BASIN_CENTER_Y - s.BASIN_CUTOUT_DIAMETER / 2:.0f} mm smala remsan framför urtaget.",
+    f"Tvättmaskin LG F2Y5PYP3W {s.MACHINE_WIDTH} x {s.MACHINE_DEPTH} x {s.MACHINE_HEIGHT} mm visas som referens, ingen bearbetning.",
+    f"Maskinen står {s.PIPE_GAP} mm från vägg enligt LG:s rekommendation, därför är skivan {s.TOP_DEPTH} mm djup.",
+    f"      Skivan går då {s.MACHINE_FRONT_OFFSET} mm förbi maskinens framkant."
+    f" Luckan buktar ut {s.MACHINE_DOOR_BULGE} mm framför maskinens kropp.",
     "Skivan täcker maskinen med 50 mm överhäng på vänster sida. Skålen går fri från maskinen med 40 mm.",
     "Inget urtag för rör i bakkant. Lägg till om rörstammen sticker fram framför vägglinjen.",
     "Synliga kanter putsade med 1 mm fas.",
 ]
 
+if s.TOP_DENSITY < 1000:
+    NOTES.append(
+        "KÄRNA: spånskiva, ej vattentät. Täta båda hålens kanter och alla kapsnitt med silikon"
+    )
+    NOTES.append(
+        "      eller tätningslack innan tvättstället monteras. Diffusionsspärr under skivan över maskinen."
+    )
+
 HOLE_TABLE = [
     "HÅLTABELL (centrum från främre vänstra hörnet)",
-    "  Urtag tvättställ      X 865     Y 300     Ø 350",
-    "  Hål blandare          X 1000    Y 490     Ø 35",
-    "  Färdig höjd ovansida skiva 902 över golv, underkant skiva 890",
+    f"  Urtag tvättställ      X {s.BASIN_CENTER_X:<8}Y {s.BASIN_CENTER_Y:<8}Ø {s.BASIN_CUTOUT_DIAMETER}",
+    f"  Hål blandare          X {s.MIXER_CENTER_X:<8}Y {s.MIXER_CENTER_Y:<8}Ø {s.MIXER_HOLE_DIAMETER}",
+    f"  Färdig höjd ovansida skiva {s.FINISHED_HEIGHT:g} över golv, underkant skiva {s.TOP_UNDERSIDE:g}",
 ]
 
 
@@ -197,31 +211,31 @@ def draw_labels(ax):
 
 def draw_dimensions(ax):
     b1, b2, b3 = s.BRACKET_CENTERS
-    dim_h(ax, 0, b1, -70, "60", tick_to=0)
-    dim_h(ax, b1, b2, -70, "595 c/c", tick_to=0)
-    dim_h(ax, b2, b3, -70, "415 c/c", tick_to=0)
-    dim_h(ax, b3, s.TOP_WIDTH, -70, "30", tick_to=0)
+    dim_h(ax, 0, b1, -70, f"{b1}", tick_to=0)
+    dim_h(ax, b1, b2, -70, f"{b2 - b1} c/c", tick_to=0)
+    dim_h(ax, b2, b3, -70, f"{b3 - b2} c/c", tick_to=0)
+    dim_h(ax, b3, s.TOP_WIDTH, -70, f"{s.TOP_WIDTH - b3}", tick_to=0)
 
     machine_right = s.MACHINE_LEFT_MARGIN + s.MACHINE_WIDTH
-    dim_h(ax, 0, s.MACHINE_LEFT_MARGIN, -170, "50", tick_to=-70)
-    dim_h(ax, s.MACHINE_LEFT_MARGIN, machine_right, -170, "600 (REF)", tick_to=-70)
-    dim_h(ax, machine_right, s.TOP_WIDTH, -170, "450", tick_to=-70)
-    dim_h(ax, 0, s.TOP_WIDTH, -260, "1100", tick_to=-170)
+    dim_h(ax, 0, s.MACHINE_LEFT_MARGIN, -170, f"{s.MACHINE_LEFT_MARGIN}", tick_to=-70)
+    dim_h(ax, s.MACHINE_LEFT_MARGIN, machine_right, -170, f"{s.MACHINE_WIDTH} (REF)", tick_to=-70)
+    dim_h(ax, machine_right, s.TOP_WIDTH, -170, f"{s.TOP_WIDTH - machine_right}", tick_to=-70)
+    dim_h(ax, 0, s.TOP_WIDTH, -260, f"{s.TOP_WIDTH}", tick_to=-170)
 
-    dim_h(ax, 0, s.BASIN_CENTER_X, 670, "865", tick_to=s.TOP_DEPTH)
-    dim_h(ax, s.BASIN_CENTER_X, s.TOP_WIDTH, 670, "235", tick_to=s.TOP_DEPTH)
-    dim_h(ax, 0, s.MIXER_CENTER_X, 770, "1000", tick_to=670)
-    dim_h(ax, s.MIXER_CENTER_X, s.TOP_WIDTH, 770, "100", tick_to=670)
+    dim_h(ax, 0, s.BASIN_CENTER_X, 670, f"{s.BASIN_CENTER_X}", tick_to=s.TOP_DEPTH)
+    dim_h(ax, s.BASIN_CENTER_X, s.TOP_WIDTH, 670, f"{s.TOP_WIDTH - s.BASIN_CENTER_X}", tick_to=s.TOP_DEPTH)
+    dim_h(ax, 0, s.MIXER_CENTER_X, 770, f"{s.MIXER_CENTER_X}", tick_to=670)
+    dim_h(ax, s.MIXER_CENTER_X, s.TOP_WIDTH, 770, f"{s.TOP_WIDTH - s.MIXER_CENTER_X}", tick_to=670)
 
     machine_back = s.MACHINE_FRONT_OFFSET + s.MACHINE_DEPTH
-    dim_v(ax, 0, s.TOP_DEPTH, -80, "600", tick_to=0)
-    dim_v(ax, 0, s.MACHINE_FRONT_OFFSET, -180, "25", tick_to=-80)
-    dim_v(ax, s.MACHINE_FRONT_OFFSET, machine_back, -180, "475 (REF)", tick_to=-80)
-    dim_v(ax, machine_back, s.TOP_DEPTH, -180, "100 rör", tick_to=-80)
-    dim_v(ax, s.TOP_DEPTH - s.BRACKET_DEPTH, s.TOP_DEPTH, b1, "403 (REF)")
+    dim_v(ax, 0, s.TOP_DEPTH, -80, f"{s.TOP_DEPTH}", tick_to=0)
+    dim_v(ax, 0, s.MACHINE_FRONT_OFFSET, -180, f"{s.MACHINE_FRONT_OFFSET}", tick_to=-80)
+    dim_v(ax, s.MACHINE_FRONT_OFFSET, machine_back, -180, f"{s.MACHINE_DEPTH} (REF)", tick_to=-80)
+    dim_v(ax, machine_back, s.TOP_DEPTH, -180, f"{s.PIPE_GAP} rör", tick_to=-80)
+    dim_v(ax, s.TOP_DEPTH - s.BRACKET_DEPTH, s.TOP_DEPTH, b1, f"{s.BRACKET_DEPTH} (REF)")
 
-    dim_v(ax, 0, s.BASIN_CENTER_Y, 1190, "300", tick_to=s.TOP_WIDTH)
-    dim_v(ax, 0, s.MIXER_CENTER_Y, 1300, "490", tick_to=s.TOP_WIDTH)
+    dim_v(ax, 0, s.BASIN_CENTER_Y, 1190, f"{s.BASIN_CENTER_Y}", tick_to=s.TOP_WIDTH)
+    dim_v(ax, 0, s.MIXER_CENTER_Y, 1300, f"{s.MIXER_CENTER_Y}", tick_to=s.TOP_WIDTH)
 
 
 def build_figure():
@@ -242,7 +256,7 @@ def build_figure():
     fig.text(
         0.05,
         0.965,
-        "BÄNKSKIVA BADRUM  1100 x 600 x 12 mm  kompaktlaminat",
+        f"BÄNKSKIVA BADRUM  {s.TOP_WIDTH} x {s.TOP_DEPTH} x {s.TOP_THICKNESS:g} mm  {s.MATERIAL_NAME}",
         fontsize=16,
         fontweight="bold",
     )

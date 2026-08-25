@@ -13,16 +13,22 @@ PLATE_THICKNESS = 30
 
 NOTES = [
     "HÖJDKEDJA (mått från färdigt golv, sett från vänster sida)",
-    "  Tvättmaskinens topp                                     850",
-    "  Luftspalt över maskinen                                + 10   = 860 underkant konsolarm",
-    "  Konsolarmens profilhöjd (REF, mät på din konsol)        + 30   = 890 underkant skiva",
-    "  Skivans tjocklek                                        + 12   = 902 FÄRDIG HÖJD",
+    f"  Tvättmaskinens topp                                     {s.MACHINE_HEIGHT}",
+    f"  Luftspalt över maskinen                                + {s.MACHINE_CLEARANCE:<5}"
+    f"= {s.ARM_UNDERSIDE} underkant konsolarm",
+    f"  Konsolarmens profilhöjd (REF, mät på din konsol)        + {s.BRACKET_ARM_HEIGHT:<5}"
+    f"= {s.TOP_UNDERSIDE} underkant skiva",
+    f"  Skivans tjocklek                                        + {s.TOP_THICKNESS:<5g}"
+    f"= {s.FINISHED_HEIGHT:g} FÄRDIG HÖJD",
     "",
-    "Färdig höjd 902 mm är ovansidan av skivan, inte underkanten. Standard bänkhöjd är 900 mm,",
-    "så 902 mm ligger rätt. Vill du exakt 900 mm sänker du luftspalten till 8 mm, men behåll",
-    "minst 5 mm så maskinen kan vibrera fritt och gå att lyfta ut.",
-    "Konsolens överkant ligger i liv med skivans underkant. Konsolen är 303 mm hög totalt,",
-    "därför hamnar väggfästena mellan cirka 590 och 890 mm över golvet.",
+    f"Färdig höjd {s.FINISHED_HEIGHT:g} mm är ovansidan av skivan, inte underkanten."
+    " Standard bänkhöjd är 900 mm.",
+    f"Tunnare skiva ger lägre höjd. Med {s.TOP_THICKNESS:g} mm skiva kan du komma ned till"
+    f" {s.MACHINE_HEIGHT + 5 + s.BRACKET_ARM_HEIGHT + s.TOP_THICKNESS:g} mm",
+    "genom att minska luftspalten till 5 mm, men behåll minst 5 mm så maskinen kan vibrera",
+    "fritt och gå att dra ut. Lägre än så går inte, maskinens topp sitter på 850.",
+    f"Konsolens överkant ligger i liv med skivans underkant. Konsolen är {s.BRACKET_TOTAL_HEIGHT} mm hög totalt,",
+    f"därför hamnar väggfästena mellan cirka {s.BRACKET_BOTTOM:g} och {s.TOP_UNDERSIDE:g} mm över golvet.",
     "Alla infästningar i våtzon 1 och 2 ska tätas mot väggens tätskikt enligt Säker Vatteninstallation.",
     "Skivan skruvas underifrån i armarna med kort skruv och borrstopp, eller limmas med MS polymer.",
     "Borra aldrig igenom skivan ovanifrån.",
@@ -118,13 +124,13 @@ def draw_labels(ax):
         ax,
         (250, s.TOP_UNDERSIDE + s.TOP_THICKNESS / 2),
         (-190, 980),
-        "BÄNKSKIVA 12 mm kompaktlaminat",
+        f"BÄNKSKIVA {s.TOP_THICKNESS:g} mm {s.MATERIAL_NAME}",
     )
     leader(
         ax,
         (400, s.ARM_UNDERSIDE + s.BRACKET_ARM_HEIGHT / 2),
         (-190, 700),
-        "KONSOL SVEDBERGS 47920\narm 403 djup, 30 bred (REF)",
+        f"KONSOL SVEDBERGS 47920\narm {s.BRACKET_DEPTH} djup, {s.BRACKET_WIDTH} bred (REF)",
         color="#33608f",
     )
     ax.text(
@@ -139,17 +145,17 @@ def draw_labels(ax):
 
 
 def draw_dimensions(ax):
-    dim_v(ax, 0, s.MACHINE_HEIGHT, 460, "850 (REF)")
-    dim_v(ax, 0, s.FINISHED_HEIGHT, -60, "902 FÄRDIG HÖJD", tick_to=0)
+    dim_v(ax, 0, s.MACHINE_HEIGHT, 460, f"{s.MACHINE_HEIGHT} (REF)")
+    dim_v(ax, 0, s.FINISHED_HEIGHT, -60, f"{s.FINISHED_HEIGHT:g} FÄRDIG HÖJD", tick_to=0)
 
-    dim_v(ax, s.BRACKET_BOTTOM, s.TOP_UNDERSIDE, 620, "303 (REF)", tick_to=WALL_X)
-    dim_v(ax, s.MACHINE_HEIGHT, s.ARM_UNDERSIDE, 670, "10 luft", tick_to=WALL_X)
-    dim_v(ax, s.ARM_UNDERSIDE, s.TOP_UNDERSIDE, 720, "30 arm", tick_to=WALL_X)
-    dim_v(ax, s.TOP_UNDERSIDE, s.FINISHED_HEIGHT, 770, "12 skiva", tick_to=WALL_X)
+    dim_v(ax, s.BRACKET_BOTTOM, s.TOP_UNDERSIDE, 620, f"{s.BRACKET_TOTAL_HEIGHT} (REF)", tick_to=WALL_X)
+    dim_v(ax, s.MACHINE_HEIGHT, s.ARM_UNDERSIDE, 670, f"{s.MACHINE_CLEARANCE} luft", tick_to=WALL_X)
+    dim_v(ax, s.ARM_UNDERSIDE, s.TOP_UNDERSIDE, 720, f"{s.BRACKET_ARM_HEIGHT} arm", tick_to=WALL_X)
+    dim_v(ax, s.TOP_UNDERSIDE, s.FINISHED_HEIGHT, 770, f"{s.TOP_THICKNESS:g} skiva", tick_to=WALL_X)
 
-    dim_h(ax, 0, s.FRONT_OVERHANG, -80, "197", tick_to=s.ARM_UNDERSIDE)
-    dim_h(ax, s.FRONT_OVERHANG, WALL_X, -80, "403", tick_to=s.ARM_UNDERSIDE)
-    dim_h(ax, 0, WALL_X, -180, "600", tick_to=-80)
+    dim_h(ax, 0, s.FRONT_OVERHANG, -80, f"{s.FRONT_OVERHANG}", tick_to=s.ARM_UNDERSIDE)
+    dim_h(ax, s.FRONT_OVERHANG, WALL_X, -80, f"{s.BRACKET_DEPTH}", tick_to=s.ARM_UNDERSIDE)
+    dim_h(ax, 0, WALL_X, -180, f"{s.TOP_DEPTH}", tick_to=-80)
 
 
 def build_figure():

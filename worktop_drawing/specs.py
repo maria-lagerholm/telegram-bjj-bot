@@ -1,3 +1,5 @@
+MATERIAL_NAME = "kompaktlaminat"
+
 TOP_WIDTH = 1100
 TOP_DEPTH = 600
 TOP_THICKNESS = 12
