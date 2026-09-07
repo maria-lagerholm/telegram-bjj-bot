@@ -27,6 +27,7 @@ Filerna hamnar i `output/`:
 - `checks.py` skriver ut alla marginaler så måtten kan kontrolleras
 - `heights.py` samlar höjdmåtten för avloppet, fyll i uppmätt färdig höjd här
 - `drain_check.py` räknar ut anslutningshöjder och hur långt förlängningsrör som behövs
+- `stack_options.py` jämför byggmåttet på olika vattenlås så det går att se vilket som blir kort nog
 - `make_drawing.py` kör allt och sparar filerna
 
 ## Produkter
@@ -41,3 +42,6 @@ Filerna hamnar i `output/`:
   G32/G40 x 32 mm (RSK 8077137)
 - Förlängning vid för hög färdig höjd: Faluplast förkromat avloppsrör 40 x 950 mm (RSK 2912963)
   och klämringskoppling Ø40/Ø40 (RSK 2912020)
+- Lågbyggande alternativ när stacken blir för lång: Prevex Preloc kommodvattenlås (RSK 8073600),
+  Preloc Basic finns i utförande med tvättmaskinsanslutning, eller Faluplast kommodvattenlås
+  44840 (RSK 8072038) om maskinen kopplas separat
