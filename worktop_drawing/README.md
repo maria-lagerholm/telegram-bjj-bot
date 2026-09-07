@@ -44,4 +44,7 @@ Filerna hamnar i `output/`:
   och klämringskoppling Ø40/Ø40 (RSK 2912020)
 - Lågbyggande alternativ när stacken blir för lång: Prevex Preloc kommodvattenlås (RSK 8073600),
   Preloc Basic finns i utförande med tvättmaskinsanslutning, eller Faluplast kommodvattenlås
-  44840 (RSK 8072038) om maskinen kopplas separat
+  44840 (RSK 8072038) om maskinen kopplas separat, båda dock i vitt
+- I krom: eget tvättmaskinslås Faluplast Falu 70775 (RSK 8072037) med backventil och vägghuv
+  (RSK 8078502), kromad slanganslutning Purus Ø32xG32 (RSK 8077138), kompakt pungvattenlås i
+  förkromad mässing Purus (RSK 8081085)

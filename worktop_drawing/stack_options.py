@@ -1,10 +1,31 @@
 import heights as h
 
 OPTIONS = [
-    ("nuvarande, maskinanslutning i stacken", h.MACHINE_CONNECTION_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT),
-    ("kromsatsen med teleskoprör, maskinen kopplas separat", h.TELESCOPE_MIN_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT),
-    ("kromsatsen med låg avloppstratt", h.FUNNEL_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT),
-    ("kommodvattenlås med maskinanslutning", h.KOMMOD_TRAP_HEIGHT),
+    (
+        "nuvarande, maskinanslutning i stacken",
+        h.MACHINE_CONNECTION_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT,
+        "vit",
+    ),
+    (
+        "kromsatsen med teleskoprör, maskinen på eget kromlås",
+        h.TELESCOPE_MIN_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT,
+        "krom",
+    ),
+    (
+        "samma men rakt utlopp i golv i stället för S-böj",
+        h.TELESCOPE_MIN_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.STRAIGHT_OUTLET_HEIGHT,
+        "krom",
+    ),
+    (
+        "kompakt mässingslås i krom, maskinen på eget kromlås",
+        h.TELESCOPE_MIN_HEIGHT + h.BRASS_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT,
+        "krom",
+    ),
+    (
+        "kommodvattenlås med maskinanslutning",
+        h.KOMMOD_TRAP_HEIGHT,
+        "vit",
+    ),
 ]
 
 
@@ -13,13 +34,13 @@ def report():
     print("behöver kortas", h.REDUCTION_NEEDED, "mm")
     print("nuvarande byggmått", nuvarande, "mm")
 
-    for namn, hojd in OPTIONS[1:]:
+    for namn, hojd, farg in OPTIONS[1:]:
         vinst = nuvarande - hojd
         if vinst >= h.REDUCTION_NEEDED:
             besked = "räcker"
         else:
             besked = "räcker inte"
-        print(namn, "byggmått", hojd, "vinst", vinst, besked)
+        print(farg, namn, "byggmått", hojd, "vinst", vinst, besked)
 
 
 if __name__ == "__main__":
