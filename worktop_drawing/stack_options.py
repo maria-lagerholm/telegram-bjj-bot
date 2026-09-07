@@ -12,11 +12,6 @@ OPTIONS = [
         "krom",
     ),
     (
-        "samma men rakt utlopp i golv i stället för S-böj",
-        h.TELESCOPE_MIN_HEIGHT + h.DESIGN_TRAP_HEIGHT + h.STRAIGHT_OUTLET_HEIGHT,
-        "krom",
-    ),
-    (
         "kompakt mässingslås i krom, maskinen på eget kromlås",
         h.TELESCOPE_MIN_HEIGHT + h.BRASS_TRAP_HEIGHT + h.SBOJ_BEND_HEIGHT,
         "krom",
